@@ -25,23 +25,12 @@ interface ResearchResponse {
   }>;
 }
 
-// Add new interface for the podcast script format
-interface PodcastScript {
-  title: string;
-  conversation: Array<{
-    id: number;
-    text: string;
-  }>;
-}
-
 export default function ResearchPodcast() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [topics, setTopics] = useState<Topic[]>([]);
-  const [podcastScript, setPodcastScript] = useState<PodcastScript | null>(
-    null
-  );
+  const [podcastScript, setPodcastScript] = useState<string>("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [error, setError] = useState<string>("");
   const [showSuggestions, setShowSuggestions] = useState(true);
@@ -73,7 +62,7 @@ export default function ResearchPodcast() {
   const handleGeneratePodcast = async (selectedTopic: string) => {
     setLoading(true);
     setError("");
-    setPodcastScript(null);
+    setPodcastScript("");
     setSearchResults([]);
     setShowSuggestions(false);
 
@@ -87,10 +76,7 @@ export default function ResearchPodcast() {
         throw new Error(data.error || "Failed to fetch research");
       }
 
-      // Parse the podcast script from the response
-      const scriptContent = JSON.parse(data?.research);
-      console.log(scriptContent);
-      setPodcastScript(data?.research);
+      setPodcastScript(data.research.content[0].text);
       setSearchResults(data.brave_search_results);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -177,8 +163,7 @@ export default function ResearchPodcast() {
             </div>
           ) : (
             <div>
-              <h2 className="text-xl ">What would you like to hear about?</h2>
-              <div className=" grid grid-cols-3 gap-5 mt-10 ">
+              <div className=" grid grid-cols-3 gap-5 ">
                 {topics.map((topic, index) => (
                   <div
                     key={index}
@@ -211,28 +196,10 @@ export default function ResearchPodcast() {
               {podcastScript && (
                 <div className="mb-8">
                   <h2 className="text-2xl font-semibold mb-4">
-                    {podcastScript.title || "Podcast Script"}
+                    Generated Podcast Script
                   </h2>
-                  <div className="space-y-4 p-6 rounded border">
-                    {podcastScript?.conversation?.map((dialogue, index) => {
-                      const isHost1 = dialogue.id === 1;
-
-                      return (
-                        <div
-                          key={index}
-                          className={`p-4 rounded-lg ${
-                            isHost1
-                              ? "bg-blue-50 ml-0 mr-12"
-                              : "bg-gray-50 ml-12 mr-0"
-                          }`}
-                        >
-                          <div className="font-semibold mb-2 text-sm text-gray-600">
-                            {isHost1 ? "Host 1" : "Host 2"}
-                          </div>
-                          <div className="text-gray-800">{dialogue.text}</div>
-                        </div>
-                      );
-                    })}
+                  <div className="whitespace-pre-wrap  p-6 rounded">
+                    {podcastScript}
                   </div>
                 </div>
               )}
