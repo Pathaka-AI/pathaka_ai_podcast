@@ -183,28 +183,10 @@ export async function GET(request: Request): Promise<Response> {
 Create a structured podcast script following this exact format:
 
 {
-  "title": "Title of the Episode",
-  "introduction": {
-    "hook": "Opening hook to grab attention",
-    "overview": "Brief overview of what will be covered"
-  },
-  "segments": [
-    {
-      "title": "Segment Title",
-      "host1": "Host 1's dialogue",
-      "host2": "Host 2's response",
-      "keyPoints": ["Point 1", "Point 2"]
-    }
-  ],
-  "conclusion": {
-    "summary": "Main takeaways",
-    "callToAction": "What listeners should do next"
-  },
-  "metadata": {
-    "duration": "25 minutes",
-    "targetAudience": "Who this episode is for",
-    "difficultyLevel": "Beginner/Intermediate/Advanced"
-  }
+ host1: "Hello and welcome to our podcast. Today, we're diving into an exciting topic.",
+ host2: "Absolutely! We're going to explore some fascinating insights and discussions.",
+
+ vice versa 
 }
 
 REQUIREMENTS:
