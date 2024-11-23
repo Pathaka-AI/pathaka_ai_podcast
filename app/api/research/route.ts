@@ -174,21 +174,69 @@ export async function GET(request: Request): Promise<Response> {
     const research = generateResearchParagraph(data);
 
     const createResearchParagraph = await askClaude(
-      `You are a professional writer and podcaster. I need you to craft an award-winning, engaging, and thought-provoking podcast script based on the following information:
+      `You are a professional writer and podcaster. Create a podcast script based on the following information:
 
 - **Research Overview**: ${research.paragraph}
 - **Web Results**: ${data.web.results}
 - **Analysis Insights**: ${research.analysis}
 
- Minimum 3,750 to 4,250 words. strictly follow the guidelines below:
+Create a structured podcast script following this exact format:
 
-The script should be written as a dynamic conversation between two hosts, keeping the tone lively, engaging, and accessible. The discussion should feel natural and captivating for a broad audience, sustaining interest for a duration of approximately 25 minutes. 
+{
+  "title": "Title of the Episode",
+  "introduction": {
+    "hook": "Opening hook to grab attention",
+    "overview": "Brief overview of what will be covered"
+  },
+  "segments": [
+    {
+      "title": "Segment Title",
+      "host1": "Host 1's dialogue",
+      "host2": "Host 2's response",
+      "keyPoints": ["Point 1", "Point 2"]
+    }
+  ],
+  "conclusion": {
+    "summary": "Main takeaways",
+    "callToAction": "What listeners should do next"
+  },
+  "metadata": {
+    "duration": "25 minutes",
+    "targetAudience": "Who this episode is for",
+    "difficultyLevel": "Beginner/Intermediate/Advanced"
+  }
+}
 
-Incorporate storytelling elements, insightful observations, and a mix of facts and anecdotes to make the podcast both educational and entertaining. Structure the content with clear transitions and ensure the dialogue flows seamlessly, keeping the audience hooked throughout.`
+REQUIREMENTS:
+- Response must be valid JSON
+- Content should be engaging and conversational
+- Include 3-4 main segments
+- Each segment should have natural dialogue between hosts
+- Include relevant facts and statistics
+- Total length should be substantial (3000-4000 words)
+- Focus on clarity and educational value
+
+Return ONLY the JSON object with no additional text or explanation.`
     );
 
+    // Extract and validate the JSON response
+    const podcastScript = createResearchParagraph.content[0].text;
+    // let parsedScript;
+    // try {
+    //   parsedScript = JSON.parse(podcastScript);
+    // } catch (error) {
+    //   console.error("Failed to parse Claude response:", error);
+    //   throw new Error("Failed to generate valid podcast script");
+    // }
+
     return NextResponse.json({
-      research: createResearchParagraph,
+      research: {
+        content: [
+          {
+            text: podcastScript,
+          },
+        ],
+      },
       brave_search_results: data.web.results,
     });
   } catch (error: any) {
