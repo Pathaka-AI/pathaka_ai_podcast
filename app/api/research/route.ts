@@ -99,7 +99,7 @@ const askClaude = async (
 
       const defaultParams = {
         model: "claude-3-sonnet-20240229",
-        max_tokens: 1024,
+        max_tokens: 3000,
         temperature: 0.7,
         messages: [{ role: "user", content: prompt }],
       };
@@ -173,54 +173,56 @@ export async function GET(request: Request): Promise<Response> {
     const data: Data = await response.json();
     const research = generateResearchParagraph(data);
 
-    const createResearchParagraph = await askClaude(
-      `You are a professional writer and podcaster. Create a podcast script based on the following information:
+    const createResearchParagraph = await askClaude(`
+You are an expert podcast scriptwriter. Create an engaging conversation between two hosts about ${searchQuery} using this research:
 
-- **Research Overview**: ${research.paragraph}
-- **Web Results**: ${data.web.results}
-- **Analysis Insights**: ${research.analysis}
+CONTEXT:
+- Research Summary: ${research.paragraph}
+- Source Material: ${data.web.results}
+- Key Topics: ${research.analysis.topWords.join(", ")}
 
-Create a structured podcast script following this exact format:
-
+Create a natural 25-minute conversation following this exact format:
 {
- host1: "Hello and welcome to our podcast. Today, we're diving into an exciting topic.",
- host2: "Absolutely! We're going to explore some fascinating insights and discussions.",
-
- vice versa 
+    "title": "Your Title Here",
+    "conversation": [
+        {"host1": "Opening line..."},
+        {"host2": "Response..."},
+        {"host1": "Next line..."},
+        {"host2": "Next response..."}
+        // continue alternating dialogue
+    ]
 }
 
 REQUIREMENTS:
-- Response must be valid JSON
-- Content should be engaging and conversational
-- Include 3-4 main segments
-- Each segment should have natural dialogue between hosts
-- Include relevant facts and statistics
-- Total length should be substantial (3000-4000 words)
-- Focus on clarity and educational value
+1. Natural, flowing conversation
+2. Include specific facts and examples from the research
+3. Maintain casual, friendly tone while being informative
+4. Cover all key topics from the research
+5. Each exchange should build on the previous one
+6. Include 15-20 exchanges to fill 25 minutes
+7. Return ONLY the JSON object - no additional text
 
-Return ONLY the JSON object with no additional text or explanation.`
-    );
+Return ONLY valid JSON matching the above format.`);
 
     // Extract and validate the JSON response
     const podcastScript = createResearchParagraph.content[0].text;
-    // let parsedScript;
-    // try {
-    //   parsedScript = JSON.parse(podcastScript);
-    // } catch (error) {
-    //   console.error("Failed to parse Claude response:", error);
-    //   throw new Error("Failed to generate valid podcast script");
-    // }
+    let parsedScript;
+    try {
+      parsedScript = JSON.parse(podcastScript);
 
-    return NextResponse.json({
-      research: {
-        content: [
-          {
-            text: podcastScript,
-          },
-        ],
-      },
-      brave_search_results: data.web.results,
-    });
+      // Validate required structure
+      if (!parsedScript.title || !Array.isArray(parsedScript.conversation)) {
+        throw new Error("Invalid script structure");
+      }
+
+      return NextResponse.json({
+        research: parsedScript,
+        brave_search_results: data.web.results,
+      });
+    } catch (error) {
+      console.error("Failed to parse Claude response:", error);
+      throw new Error("Failed to generate valid podcast script");
+    }
   } catch (error: any) {
     console.error("Error processing request:", error.message);
     return NextResponse.json(

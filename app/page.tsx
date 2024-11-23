@@ -25,12 +25,23 @@ interface ResearchResponse {
   }>;
 }
 
+// Add new interface for the podcast script format
+interface PodcastScript {
+  title: string;
+  conversation: Array<{
+    host1?: string;
+    host2?: string;
+  }>;
+}
+
 export default function ResearchPodcast() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [topics, setTopics] = useState<Topic[]>([]);
-  const [podcastScript, setPodcastScript] = useState<string>("");
+  const [podcastScript, setPodcastScript] = useState<PodcastScript | null>(
+    null
+  );
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [error, setError] = useState<string>("");
   const [showSuggestions, setShowSuggestions] = useState(true);
@@ -62,7 +73,7 @@ export default function ResearchPodcast() {
   const handleGeneratePodcast = async (selectedTopic: string) => {
     setLoading(true);
     setError("");
-    setPodcastScript("");
+    setPodcastScript(null);
     setSearchResults([]);
     setShowSuggestions(false);
 
@@ -76,7 +87,10 @@ export default function ResearchPodcast() {
         throw new Error(data.error || "Failed to fetch research");
       }
 
-      setPodcastScript(data.research.content[0].text);
+      // Parse the podcast script from the response
+      // const scriptContent = JSON.parse(data?.research);
+      console.log(data?.research);
+      setPodcastScript(data?.research);
       setSearchResults(data.brave_search_results);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -197,10 +211,30 @@ export default function ResearchPodcast() {
               {podcastScript && (
                 <div className="mb-8">
                   <h2 className="text-2xl font-semibold mb-4">
-                    Generated Podcast Script
+                    {podcastScript.title || "Podcast Script"}
                   </h2>
-                  <div className="whitespace-pre-wrap  p-6 rounded">
-                    {podcastScript}
+                  <div className="space-y-4 p-6 rounded border">
+                    {podcastScript.conversation.map((dialogue: any, index) => {
+                      const speaker = Object.keys(dialogue)[0];
+                      const text = dialogue[speaker];
+                      const isHost1 = speaker === "host1";
+
+                      return (
+                        <div
+                          key={index}
+                          className={`p-4 rounded-lg ${
+                            isHost1
+                              ? "bg-blue-50 ml-0 mr-12"
+                              : "bg-gray-50 ml-12 mr-0"
+                          }`}
+                        >
+                          <div className="font-semibold mb-2 text-sm text-gray-600">
+                            {isHost1 ? "Host 1" : "Host 2"}
+                          </div>
+                          <div className="text-gray-800">{text}</div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
