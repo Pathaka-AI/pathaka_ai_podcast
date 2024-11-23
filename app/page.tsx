@@ -29,8 +29,8 @@ interface ResearchResponse {
 interface PodcastScript {
   title: string;
   conversation: Array<{
-    host1?: string;
-    host2?: string;
+    id: number;
+    text: string;
   }>;
 }
 
@@ -214,10 +214,8 @@ export default function ResearchPodcast() {
                     {podcastScript.title || "Podcast Script"}
                   </h2>
                   <div className="space-y-4 p-6 rounded border">
-                    {podcastScript.conversation.map((dialogue: any, index) => {
-                      const speaker = Object.keys(dialogue)[0];
-                      const text = dialogue[speaker];
-                      const isHost1 = speaker === "host1";
+                    {podcastScript.conversation.map((dialogue, index) => {
+                      const isHost1 = dialogue.id === 1;
 
                       return (
                         <div
@@ -231,7 +229,7 @@ export default function ResearchPodcast() {
                           <div className="font-semibold mb-2 text-sm text-gray-600">
                             {isHost1 ? "Host 1" : "Host 2"}
                           </div>
-                          <div className="text-gray-800">{text}</div>
+                          <div className="text-gray-800">{dialogue.text}</div>
                         </div>
                       );
                     })}

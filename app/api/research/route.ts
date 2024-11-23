@@ -173,56 +173,148 @@ export async function GET(request: Request): Promise<Response> {
     const data: Data = await response.json();
     const research = generateResearchParagraph(data);
 
-    const createResearchParagraph = await askClaude(`
-You are an expert podcast scriptwriter. Create an engaging conversation between two hosts about ${searchQuery} using this research:
+    //     const createResearchParagraph = await askClaude(`
+    // You are an expert podcast scriptwriter. Create an engaging conversation between two hosts about ${searchQuery} using this research:
 
-CONTEXT:
-- Research Summary: ${research.paragraph}
-- Source Material: ${data.web.results}
-- Key Topics: ${research.analysis.topWords.join(", ")}
+    // CONTEXT:
+    // - Research Summary: ${research.paragraph}
+    // - Source Material: ${data.web.results}
+    // - Key Topics: ${research.analysis.topWords.join(", ")}
 
-Create a natural 25-minute conversation following this exact format:
-{
-    "title": "Your Title Here",
-    "conversation": [
-        {"host1": "Opening line..."},
-        {"host2": "Response..."},
-        {"host1": "Next line..."},
-        {"host2": "Next response..."}
-        // continue alternating dialogue
-    ]
-}
+    // Create a natural 25-minute conversation following this exact format:
+    // {
+    //     "title": "Your Title Here",
+    //     "conversation": [
+    //         {"host1": "Opening line..."},
+    //         {"host2": "Response..."},
+    //         {"host1": "Next line..."},
+    //         {"host2": "Next response..."}
+    //         // continue alternating dialogue
+    //     ]
+    // }
 
-REQUIREMENTS:
-1. Natural, flowing conversation
-2. Include specific facts and examples from the research
-3. Maintain casual, friendly tone while being informative
-4. Cover all key topics from the research
-5. Each exchange should build on the previous one
-6. Include 15-20 exchanges to fill 25 minutes
-7. Return ONLY the JSON object - no additional text
+    // REQUIREMENTS:
+    // 1. Natural, flowing conversation
+    // 2. Include specific facts and examples from the research
+    // 3. Maintain casual, friendly tone while being informative
+    // 4. Cover all key topics from the research
+    // 5. Each exchange should build on the previous one
+    // 6. Include 15-20 exchanges to fill 25 minutes
+    // 7. Return ONLY the JSON object - no additional text
 
-Return ONLY valid JSON matching the above format.`);
+    // Return ONLY valid JSON matching the above format.`);
+
+    const createResearchParagraph = await askClaude(
+      `You are a professional writer and podcaster. I need you to craft an award-winning, engaging, and thought-provoking podcast script based on the following information:
+- **Research Overview**: ${research.paragraph}      
+- **Web Results**: ${data.web.results}
+- **Analysis Insights**: ${research.analysis}
+ Each line should be a JSON object within an array.
+                  Use id: 1 for Speaker 1 and id: 2 for Speaker 2.
+                  Example of Structure each object in the array as follows:
+                  Just give me simple JSON object with id and text key value pair.
+                  Stricly follow the below format.
+                  [
+                  {
+                    "id": 1,
+                    "text": "Welcome to today's episode, folks, where we're diving into the history of one of the most iconic games of all time - Minecraft. I'm your host, and I'm super excited to share with you the story of how this sandbox sensation was born. And joining me is someone who's new to the Minecraft universe, Ben, so let's get into it. Hi, Ben, ready to dig in?"
+                  },
+                  {
+                    "id": 2,
+                    "text": "Yeah, I'm here, I've heard of Minecraft, but I've never actually played it. I've seen all the builds and creations online, but that's about it.\n\nSpeaker 1: Well, that's perfect, because I'm going to start at the very beginning. So, Minecraft was created by Markus Persson, also known as Notch, and released in 2009 as an indie sandbox game."
+                  },
+                  {
+                    "id": 1,
+                    "text": "Hmm, I'd imagine it's like, a game where you can just build and play around without any rules, right? Like, you're given a bunch of blocks or tools, and you just experiment and see what happens?"
+                  }
+                  ]
+
+                  Starts responce with [ 
+                  Ends with ]
+
+                  Avoid any special characters or escape sequences like \n, \t, or \n'.
+                  Keep responses humorous and engaging to enhance the listener's experience.
+
+                  ## QUALITY GUIDELINES
+
+                  1. Conversational Elements:
+                  - Use contractions (I'm, you're, isn't)
+                  - Include false starts occasionally
+                  - Add thinking sounds naturally
+                  - Incorporate relevant personal anecdotes
+
+                  2. Educational Components:
+                  - Break complex ideas into digestible chunks
+                  - Use relevant metaphors
+                  - Provide real-world examples
+                  - Reference familiar concepts
+
+                  3. Engagement Techniques:
+                  - Create mini-cliffhangers between segments
+                  - Use callback references to earlier points
+                  - Include unexpected facts or perspectives
+                  - Build running jokes or themes
+
+                  4. TTS Optimization:
+                  - Avoid ambiguous abbreviations
+                  - Use full words instead of numbers
+                  - Clear pronunciation guidance for unusual terms
+                  - Consistent speaker identification
+
+                  ## CONTENT BALANCE
+
+                  Maintain these ratios:
+                  - 60% Core content/education
+                  - 20% Personal stories/examples
+                  - 10% Humor/entertainment
+                  - 10% Questions/clarifications
+
+                  ## TECHNICAL SPECIFICATIONS
+
+                  1. JSON Formatting:
+                  - No escape characters
+                  - No special formatting
+                  - Clean, parseable structure
+                  - Consistent quotation usage
+
+                  2. Speech Timing:
+                  - Average 150 words per minute
+                  - Natural pauses between exchanges
+                  - Varied sentence lengths
+                  - Rhythm changes for emphasis
+
+                  3. Quality Checks:
+                  - Verify JSON validity
+                  - Check for natural flow
+                  - Ensure TTS compatibility
+                  - Maintain consistent tone
+
+                  4. Accessibility:
+                  - Clear pronunciation guides
+                  - Explicit context setting
+                  - Defined technical terms
+                  - Inclusive language,
+ Minimum 3,750 to 4,250 words. strictly follow the guidelines below:
+The script should be written as a dynamic conversation between two hosts, keeping the tone lively, engaging, and accessible. The discussion should feel natural and captivating for a broad audience, sustaining interest for a duration of approximately 25 minutes. 
+Incorporate storytelling elements, insightful observations, and a mix of facts and anecdotes to make the podcast both educational and entertaining. Structure the content with clear transitions and ensure the dialogue flows seamlessly, keeping the audience hooked throughout.`
+    );
+    console.log(createResearchParagraph);
 
     // Extract and validate the JSON response
     const podcastScript = createResearchParagraph.content[0].text;
-    let parsedScript;
-    try {
-      parsedScript = JSON.parse(podcastScript);
+    // let parsedScript;
+    // try {
+    //   parsedScript = JSON.parse(podcastScript);
 
-      // Validate required structure
-      if (!parsedScript.title || !Array.isArray(parsedScript.conversation)) {
-        throw new Error("Invalid script structure");
-      }
+    //   // Validate required structure
+    //   if (!parsedScript.title || !Array.isArray(parsedScript.conversation)) {
+    //     throw new Error("Invalid script structure");
+    //   }
 
-      return NextResponse.json({
-        research: parsedScript,
-        brave_search_results: data.web.results,
-      });
-    } catch (error) {
-      console.error("Failed to parse Claude response:", error);
-      throw new Error("Failed to generate valid podcast script");
-    }
+    return NextResponse.json({
+      research: podcastScript,
+      brave_search_results: data.web.results,
+    });
   } catch (error: any) {
     console.error("Error processing request:", error.message);
     return NextResponse.json(
