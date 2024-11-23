@@ -83,13 +83,18 @@ function generateResearchParagraph(data: Data): ResearchParagraph {
   };
 }
 
-// Create reusable function for Claude interactions
+// Modify askClaude function to include timeout
 const askClaude = async (
   prompt: string,
   options: Record<string, any> = {}
 ): Promise<any> => {
-  const maxRetries = 3;
-  const baseDelay = 1000; // 1 second
+  const maxRetries = 2; // Reduced from 3
+  const baseDelay = 500; // Reduced from 1000
+  const timeout = 8000; // 8 seconds timeout
+
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("Claude API timeout")), timeout)
+  );
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
@@ -99,20 +104,18 @@ const askClaude = async (
 
       const defaultParams = {
         model: "claude-3-sonnet-20240229",
-        max_tokens: 1024,
+        max_tokens: 750, // Reduced from 1024
         temperature: 0.7,
         messages: [{ role: "user", content: prompt }],
       };
 
       const params: any = { ...defaultParams, ...options };
-      const response: any = await anthropic.messages.create(params);
 
-      console.log("Claude Response Generated:", {
-        prompt_length: prompt.length,
-        response_length: response.content[0].text.length,
-        model: params.model,
-        attempt: attempt + 1,
-      });
+      // Race between API call and timeout
+      const response: any = await Promise.race([
+        anthropic.messages.create(params),
+        timeoutPromise,
+      ]);
 
       return response;
     } catch (error: any) {
@@ -177,17 +180,11 @@ export async function GET(request: Request): Promise<Response> {
     const research = generateResearchParagraph(data);
 
     const createResearchParagraph = await askClaude(
-      `You are a professional writer and podcaster. I need you to craft an award-winning, engaging, and thought-provoking podcast script based on the following information:
-
-- **Research Overview**: ${research.paragraph}
-- **Web Results**: ${data.web.results}
-- **Analysis Insights**: ${research.analysis}
-
- Minimum 3,750 to 4,250 words. strictly follow the guidelines below:
-
-The script should be written as a dynamic conversation between two hosts, keeping the tone lively, engaging, and accessible. The discussion should feel natural and captivating for a broad audience, sustaining interest for a duration of approximately 25 minutes. 
-
-Incorporate storytelling elements, insightful observations, and a mix of facts and anecdotes to make the podcast both educational and entertaining. Structure the content with clear transitions and ensure the dialogue flows seamlessly, keeping the audience hooked throughout.`
+      `As a professional writer, create a concise, engaging podcast script (max 1000 words) discussing:
+      ${research.paragraph}
+      
+      Format as a brief conversation between two hosts, focusing on key insights and main points.`,
+      { max_tokens: 750 }
     );
 
     return NextResponse.json({
