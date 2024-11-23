@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { CLAUDE_API_KEY } from "@/lib/utils";
 
 // Reusable askClaude function with retry logic
 const askClaude = async (prompt: string, options: Record<string, any> = {}) => {
@@ -10,7 +9,7 @@ const askClaude = async (prompt: string, options: Record<string, any> = {}) => {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const anthropic = new Anthropic({
-        apiKey: CLAUDE_API_KEY,
+        apiKey: process.env.NEXT_CLAUDE_API_KEY,
       });
 
       const defaultParams = {

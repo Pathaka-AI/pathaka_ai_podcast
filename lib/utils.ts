@@ -5,10 +5,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export const BRAVE_API_KEY = "BSALUZ3K2Ap12s2jtD4VdBVEQDgae_s";
-export const CLAUDE_API_KEY =
-  "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";
-
 export const example_response = `
 {
     "research": {

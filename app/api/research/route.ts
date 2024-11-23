@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { BRAVE_API_KEY, CLAUDE_API_KEY } from "@/lib/utils";
 
 interface WebResult {
   title: string;
@@ -95,7 +94,7 @@ const askClaude = async (
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const anthropic = new Anthropic({
-        apiKey: CLAUDE_API_KEY,
+        apiKey: process.env.NEXT_CLAUDE_API_KEY,
       });
 
       const defaultParams = {
@@ -158,8 +157,12 @@ export async function GET(request: Request): Promise<Response> {
     )}`;
     const headers = {
       Accept: "application/json",
-      "X-Subscription-Token": BRAVE_API_KEY, // Move to .env file
+      "X-Subscription-Token": process.env.NEXT_BRAVE_API_KEY, // Move to .env file
     };
+
+    if (headers) {
+      throw new Error(`Error from Brave (headers)`);
+    }
 
     const response = await fetch(url, { headers });
 
