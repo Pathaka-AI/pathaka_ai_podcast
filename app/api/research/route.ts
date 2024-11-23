@@ -173,43 +173,123 @@ export async function GET(request: Request): Promise<Response> {
     const data: Data = await response.json();
     const research = generateResearchParagraph(data);
 
-    //     const createResearchParagraph = await askClaude(`
-    // You are an expert podcast scriptwriter. Create an engaging conversation between two hosts about ${searchQuery} using this research:
-
-    // CONTEXT:
-    // - Research Summary: ${research.paragraph}
-    // - Source Material: ${data.web.results}
-    // - Key Topics: ${research.analysis.topWords.join(", ")}
-
-    // Create a natural 25-minute conversation following this exact format:
-    // {
-    //     "title": "Your Title Here",
-    //     "conversation": [
-    //         {"host1": "Opening line..."},
-    //         {"host2": "Response..."},
-    //         {"host1": "Next line..."},
-    //         {"host2": "Next response..."}
-    //         // continue alternating dialogue
-    //     ]
-    // }
-
-    // REQUIREMENTS:
-    // 1. Natural, flowing conversation
-    // 2. Include specific facts and examples from the research
-    // 3. Maintain casual, friendly tone while being informative
-    // 4. Cover all key topics from the research
-    // 5. Each exchange should build on the previous one
-    // 6. Include 15-20 exchanges to fill 25 minutes
-    // 7. Return ONLY the JSON object - no additional text
-
-    // Return ONLY valid JSON matching the above format.`);
-
     const createResearchParagraph = await askClaude(
-      `You are a professional writer and podcaster. I need you to craft an award-winning, engaging, and thought-provoking podcast script based on the following information:
-- **Research Overview**: ${research.paragraph}      
-- **Web Results**: ${data.web.results}
-- **Analysis Insights**: ${research.analysis}
- Each line should be a JSON object within an array.
+      `You are an award-winning podcast writer, responsible for creating highly engaging and conversational scripts. Your job is to craft realistic and nuanced podcast dialogues, ensuring that the conversation feels authentic, with natural interruptions and a balance of teaching and curiosity between speakers.
+                  Instructions:
+                  Web Search: ${data?.web?.results} 
+                  ${research?.paragraph}
+                  ${research.analysis}
+
+                  Duration: 25 minutes (~2500-3000 words)
+                  Generate 21000 chararcters of podcast conversation from the essay then convert it in the JSON given below.
+                  Style: Conversational, dynamic, educational entertainment
+
+                  ## SPEAKER PROFILES
+
+                  ### Host (Speaker 1)
+                  - Name: Amelia
+                  - Role: Expert guide and storyteller
+                  - Personality Traits:
+                    * Knowledgeable but approachable
+                    * Enthusiastic about sharing insights
+                    * Uses metaphors and analogies effectively
+                    * Occasionally self-deprecating
+                    * Responds thoughtfully to questions
+                  - Speech Patterns:
+                    * Varied pace and emphasis
+                    * Clear articulation
+                    * Strategic pauses for emphasis
+                    * Occasional verbal backtracking for authenticity
+
+                  ### Co-Host (Speaker 2)
+                  - Name: Alex
+                  - Role: Curious learner and audience surrogate
+                  - Personality Traits:
+                    * Genuinely interested
+                    * Quick-witted
+                    * Asks insightful questions
+                    * Shares relatable perspectives
+                    * Occasionally challenges assumptions
+                    * Occasionally adds related and relevant facts or figures  
+                  - Speech Patterns:
+                    * Natural reactions ("Hmm", "Oh!", "Wait...")
+                    * Brief interjections
+                    * Thinking out loud
+                    * Casual tone
+
+                  ## EPISODE STRUCTURE
+
+                  ### Opening Segment (5 minutes)
+                  - Welcoming atmosphere
+                  - Topic introduction
+                  - Personal connection to topic
+                  - Episode roadmap
+                  - Initial co-host reactions
+                  - 500 words from essay to be used in the opening segment of JSON
+
+                  ### Main Content (20 minutes)
+                  Divide into 3-4 distinct subtopics:
+                  1. Foundation/Background
+                  2. Key Insights/Analysis
+                  3. Practical Applications
+                  4. Future Implications
+                  - 2000 words from essay to be used in the opening segment of JSON
+
+                  ### Closing Segment (5 minutes)
+                  - Key takeaways
+                  - Personal reflections
+                  - Next episode tease
+                  - Sign-off
+                  - 500 words from essay to be used in the opening segment of JSON
+
+
+                  ## CONVERSATION DYNAMICS
+                  - Make like 3000 words of conversation in JSON format.
+                  - If we calulate the words in the text in JSON it should be around 3000 words.
+
+                  ### Natural Flow Elements
+                  1. Micro-Interruptions:
+                  {
+                    "id": 2,
+                    "text": "Oh wait, sorry to jump in, but..."
+                  }
+
+                  2. Collaborative Thinking:
+                  {
+                    "id": 2,
+                    "text": "So what you're saying is... [rephrases concept]"
+                  }
+
+                  3. Real-time Processing:
+       
+                  {
+                    "id": 2,
+                    "text": "Hmm... let me think about that for a second..."
+                  }
+
+                  ### TTS-Optimized Speech Patterns
+
+                  1. Emphasis Indicators:
+                  - Use capitalization sparingly for emphasis
+                  - Include brief pauses (...) for natural breaks
+                  - Break long sentences into shorter segments
+
+                  2. Reaction Markers:
+                  - [chuckles]
+                  - [thoughtful pause]
+                  - [excited]
+                  - [surprised]
+
+                  3. Voice Modulation Hints:
+                  - End statements with period for falling tone
+                  - Use question marks for rising intonation
+                  - Em dashes for abrupt transitions
+                  - Commas for brief pauses
+                  - Directly Give JSON format of the conversation with 3000 words.
+
+
+                  ## JSON FORMAT
+                  Each line should be a JSON object within an array.
                   Use id: 1 for Speaker 1 and id: 2 for Speaker 2.
                   Example of Structure each object in the array as follows:
                   Just give me simple JSON object with id and text key value pair.
@@ -293,10 +373,7 @@ export async function GET(request: Request): Promise<Response> {
                   - Clear pronunciation guides
                   - Explicit context setting
                   - Defined technical terms
-                  - Inclusive language,
- Minimum 3,750 to 4,250 words. strictly follow the guidelines below:
-The script should be written as a dynamic conversation between two hosts, keeping the tone lively, engaging, and accessible. The discussion should feel natural and captivating for a broad audience, sustaining interest for a duration of approximately 25 minutes. 
-Incorporate storytelling elements, insightful observations, and a mix of facts and anecdotes to make the podcast both educational and entertaining. Structure the content with clear transitions and ensure the dialogue flows seamlessly, keeping the audience hooked throughout.`
+                  - Inclusive language`
     );
     console.log(createResearchParagraph);
 

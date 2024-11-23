@@ -88,8 +88,8 @@ export default function ResearchPodcast() {
       }
 
       // Parse the podcast script from the response
-      // const scriptContent = JSON.parse(data?.research);
-      console.log(data?.research);
+      const scriptContent = JSON.parse(data?.research);
+      console.log(scriptContent);
       setPodcastScript(data?.research);
       setSearchResults(data.brave_search_results);
     } catch (err) {
@@ -214,7 +214,7 @@ export default function ResearchPodcast() {
                     {podcastScript.title || "Podcast Script"}
                   </h2>
                   <div className="space-y-4 p-6 rounded border">
-                    {podcastScript.conversation.map((dialogue, index) => {
+                    {podcastScript?.conversation?.map((dialogue, index) => {
                       const isHost1 = dialogue.id === 1;
 
                       return (
