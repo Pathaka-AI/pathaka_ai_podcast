@@ -155,15 +155,15 @@ export async function GET(request: Request): Promise<Response> {
     const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(
       searchQuery
     )}`;
-    const headers = {
-      Accept: "application/json",
-      "X-Subscription-Token": process.env.NEXT_BRAVE_API_KEY, // Move to .env file
-    };
-
-    if (headers) {
-      throw new Error(`Error from Brave (headers)`);
+    const apiKey = process.env.NEXT_BRAVE_API_KEY;
+    if (!apiKey) {
+      throw new Error("Missing Brave API key");
     }
 
+    const headers = {
+      Accept: "application/json",
+      "X-Subscription-Token": apiKey,
+    };
     const response = await fetch(url, { headers });
 
     if (!response.ok) {
