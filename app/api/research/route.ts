@@ -136,7 +136,7 @@ const askClaude = async (
   }
 };
 
-// Convert Express route to Next.js route handler
+// Modify the prompt to be more concise
 export async function GET(request: Request): Promise<Response> {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q");
