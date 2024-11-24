@@ -183,6 +183,76 @@ export async function GET(request: Request): Promise<Response> {
 - **Web Results**: ${data.web.results}
 - **Analysis Insights**: ${research.analysis}
 
+### Host (Speaker 1)
+- Role: Expert guide and storyteller
+- Personality Traits:
+  * Knowledgeable but approachable
+  * Enthusiastic about sharing insights
+  * Uses metaphors and analogies effectively
+  * Occasionally self-deprecating
+  * Responds thoughtfully to questions
+- Speech Patterns:
+  * Varied pace and emphasis
+  * Clear articulation
+  * Strategic pauses for emphasis
+  * Occasional verbal backtracking for authenticity
+
+### Co-Host (Speaker 2)
+- Role: Curious learner and audience surrogate
+- Personality Traits:
+  * Genuinely interested
+  * Quick-witted
+  * Asks insightful questions
+  * Shares relatable perspectives
+  * Occasionally challenges assumptions
+  * Occasionally adds related and relevant facts or figures 
+  * Natural speech patterns with strategic pauses 
+- Speech Patterns:
+  * Natural reactions ("Hmm", "Oh!", "Wait...")
+  * Brief interjections
+  * Thinking out loud
+  * Casual tone
+
+## Episode Structure
+
+1. Opening (5 min)
+    - Welcome and topic introduction
+    - Personal connection
+    - Episode overview
+2. Main Content (20 min)
+    - Foundation/Background
+    - Key Insights/Analysis
+    - Future Implications
+3. Closing (5 min)
+    - Key takeaways
+    - Personal reflections
+    - Sign off
+
+## Writing Guidelines
+
+### Content Balance
+
+- 60% Core education
+- 20% Stories/examples
+- 10% Humor
+- 10% Questions/clarification
+
+### Natural Dialogue Elements
+
+- Include micro-interruptions
+- Use collaborative thinking ("So what you're saying is...")
+- Add real-time processing moments
+- Include false starts occasionally
+- Build running themes/callbacks
+
+### Voice Optimization
+
+- Write for 145 words per minute
+- Use ALL CAPS sparingly for emphasis
+- Include pauses (...) for natural breaks
+- Break long sentences into segments
+- Use contractions (I'm, you're, isn't)
+
  Minimum 3,750 to 4,250 words. strictly follow the guidelines below:
 
 The script should be written as a dynamic conversation between two hosts, keeping the tone lively, engaging, and accessible. The discussion should feel natural and captivating for a broad audience, sustaining interest for a duration of approximately 25 minutes. 
