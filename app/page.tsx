@@ -76,8 +76,9 @@ export default function ResearchPodcast() {
         throw new Error(data.error || "Failed to fetch research");
       }
 
-      setPodcastScript(data.research.content[0].text);
-      setSearchResults(data.brave_search_results);
+      const formattedScript = JSON.stringify(data, null, 2);
+      setPodcastScript(formattedScript);
+      setSearchResults(data?.brave_search_results);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -194,17 +195,12 @@ export default function ResearchPodcast() {
           ) : (
             <>
               {podcastScript && (
-                <div className="mb-8">
-                  <h2 className="text-2xl font-semibold mb-4">
-                    Generated Podcast Script
-                  </h2>
-                  <div className="whitespace-pre-wrap  p-6 rounded">
-                    {podcastScript}
-                  </div>
+                <div className="whitespace-pre-wrap">
+                  <CodeBlock code={podcastScript} />
                 </div>
               )}
 
-              {searchResults.length > 0 && (
+              {searchResults?.length > 0 && (
                 <div>
                   <h2 className="text-2xl font-semibold mb-4">
                     Reference Sources

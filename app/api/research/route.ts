@@ -99,7 +99,7 @@ const askClaude = async (
 
       const defaultParams = {
         model: "claude-3-sonnet-20240229",
-        max_tokens: 1024,
+        max_tokens: 3000,
         temperature: 0.7,
         messages: [{ role: "user", content: prompt }],
       };
@@ -176,15 +176,45 @@ export async function GET(request: Request): Promise<Response> {
     const data: Data = await response.json();
     const research = generateResearchParagraph(data);
 
-    const createResearchParagraph = await askClaude(
-      `You are a professional writer and podcaster. I need you to craft an award-winning, engaging, and thought-provoking podcast script based on the following information:
-
+    const createResearchParagraph = await askClaude(`
+      You are an award-winning podcast script writer, responsible for creating highly engaging and conversational scripts. 
+Your job is to craft realistic and nuanced podcast dialogues, ensuring that the conversation feels authentic, with natural interruptions and a balance of teaching and curiosity between speakers based on the following information:
 - **Research Overview**: ${research.paragraph}
 - **Web Results**: ${data.web.results}
 - **Analysis Insights**: ${research.analysis}
+ Minimum 3,250 to 4,000 words. Strictly follow the guidelines below:
 
+The script should be written as a dynamic conversation between two hosts, keeping the tone lively, engaging, and accessible. The discussion should feel natural and captivating for a broad audience, sustaining interest for a duration of approximately 25 minutes which is around 3,250 to 4,000 words.
+
+Incorporate storytelling elements, really insightful observations with facts to make the podcast both educational and entertaining. Without specifically labelling this in the script, structure the content and ensure the dialogue flows seamlessly, keeping the audience hooked throughout.
+
+## CRITICAL TTS RULES
+
+1. Non-Spoken Content:
+   - Place any direction, emotion, or non-verbal cues between angle brackets
+   - Example: "This is spoken <pause for effect> and this is also spoken"
+   - Example: "Here's what happened next <sound effect: door creaking>"
+
+2. Opening Format:
+   - Hosts should introduce themselves directly without show titles or episode names
+   - Example: "Hi everyone, I'm Alex."
+   - Never include podcast name or episode title in the spoken script
+
+3. Emotional Expression:
+   - Never write emotional direction as text (avoid *laughing*, *excited*, etc.)
+   - Use "HA!" or "HAHA!" for laughter
+   - Use tone and word choice to convey emotion rather than direction
+   
+4. Audio Cues:
+   - All technical direction goes in angle brackets
+   - Example: "Let me think about that <3 second pause> okay, got it!"
+
+## SPEAKER PROFILES
 ### Host (Speaker 1)
 - Role: Expert guide and storyteller
+
+Speaker 1 Leads the conversation, offering deep insights, fascinating examples, and metaphors about the topic. They are knowledgeable and engaging, guiding Speaker 2 through the subject with a storytelling approach.
+
 - Personality Traits:
   * Knowledgeable but approachable
   * Enthusiastic about sharing insights
@@ -199,66 +229,167 @@ export async function GET(request: Request): Promise<Response> {
 
 ### Co-Host (Speaker 2)
 - Role: Curious learner and audience surrogate
+
+Speaker 2 is Curious, genuinely interested, and occasionally humorous, asking follow-up questions to clarify points, repeats points back to the audience, express excitement or confusion. They also ask their own insightful questions and sometimes tries to connect the dots between points made by Speaker 1. 
+Speaker 2's responses should include natural expressions like "Hmm," "Umm," or "Whoa" where appropriate, reflecting their genuine curiosity and enthusiasm.
+
 - Personality Traits:
   * Genuinely interested
   * Quick-witted
   * Asks insightful questions
   * Shares relatable perspectives
   * Occasionally challenges assumptions
-  * Occasionally adds related and relevant facts or figures 
-  * Natural speech patterns with strategic pauses 
+  * Occasionally adds related and relevant true facts or figures  
 - Speech Patterns:
   * Natural reactions ("Hmm", "Oh!", "Wait...")
   * Brief interjections
   * Thinking out loud
-  * Casual tone
+  * Friendly tone
 
-## Episode Structure
+## EPISODE STRUCTURE
 
-1. Opening (5 min)
-    - Welcome and topic introduction
-    - Personal connection
-    - Episode overview
-2. Main Content (20 min)
-    - Foundation/Background
-    - Key Insights/Analysis
-    - Future Implications
-3. Closing (5 min)
-    - Key takeaways
-    - Personal reflections
-    - Sign off
+### Opening Segment (5 minutes)
+- Simple host introductions
+- Topic introduction
+- Initial co-host reactions
 
-## Writing Guidelines
+### Main Content (20 minutes)
+Divide into 3-4 distinct subtopics:
+1. Foundation/Background
+2. A narrative series of key insights
+3. Analysis
+4. Implications
 
-### Content Balance
+### Closing Segment (5 minutes)
+- Key takeaways
+- Personal reflections
+- Simple sign-off
 
-- 60% Core education
-- 20% Stories/examples
-- 10% Humor
-- 10% Questions/clarification
+## CONVERSATION DYNAMICS
 
-### Natural Dialogue Elements
+### Natural Flow Elements
 
-- Include micro-interruptions
-- Use collaborative thinking ("So what you're saying is...")
-- Add real-time processing moments
-- Include false starts occasionally
-- Build running themes/callbacks
+"
+### Natural Flow Elements
+1. Micro-Interruptions:
+json
+{
+  "id": 2,
+  "text": "Oh wait, sorry to jump in, but..."
+}
 
-### Voice Optimization
 
-- Write for 145 words per minute
-- Use ALL CAPS sparingly for emphasis
-- Include pauses (...) for natural breaks
-- Break long sentences into segments
+2. Collaborative Thinking:
+json
+{
+  "id": 2,
+  "text": "So what you're saying is... [rephrases concept]"
+}
+
+
+3. Real-time Processing:
+json
+{
+  "id": 2,
+  "text": "Hmm... let me think about that for a second..."
+}
+
+
+### TTS-Optimized Speech Patterns
+
+1. Emphasis Indicators:
+- Use CAPS for emphasized words (avoid italics or bold)
+- Include pauses using angle brackets <pause: 2s>
+- Break long sentences into shorter segments
+- Use "HA!" or "HAHA!" for laughter
+
+2. Voice Modulation Hints:
+- End statements with period for falling tone
+- Use question marks for rising intonation
+- Em dashes for abrupt transitions
+- Commas for brief pauses
+
+## JSON STRUCTURE REQUIREMENTS
+
+json
+[
+  {
+    "id": 1,
+    "text": "Clear, TTS-friendly text with natural speech patterns"
+  },
+  {
+    "id": 2,
+    "text": "Response with appropriate reactions and ENERGY!!"
+  }
+]
+
+
+Starts response with [ 
+Ends with ]
+
+Avoid any special characters or escape sequences like \n, \t, or \n'.
+
+## QUALITY GUIDELINES
+
+1. Conversational Elements:
 - Use contractions (I'm, you're, isn't)
+- Include false starts occasionally
+- Script in thinking sounds like "umm" or "err" naturally
 
- Minimum 3,750 to 4,250 words. strictly follow the guidelines below:
+2. Educational Components:
+- Break complex ideas into digestible chunks
+- Use relevant metaphors
+- Provide real-world examples
+- Reference familiar concepts
 
-The script should be written as a dynamic conversation between two hosts, keeping the tone lively, engaging, and accessible. The discussion should feel natural and captivating for a broad audience, sustaining interest for a duration of approximately 25 minutes. 
+3. Engagement Techniques:
+- Create mini-cliffhangers between segments
+- Use callback references to earlier points
+- Include unexpected facts or perspectives
+- Build running jokes or themes
 
-Incorporate storytelling elements, insightful observations, and a mix of facts and anecdotes to make the podcast both educational and entertaining. Structure the content with clear transitions and ensure the dialogue flows seamlessly, keeping the audience hooked throughout.`
-    );
+4. TTS Optimization:
+- Avoid ambiguous abbreviations
+- Use full words instead of numbers
+- Clear pronunciation guidance for unusual terms
+- Consistent speaker identification
+
+## CONTENT BALANCE
+
+Maintain these ratios:
+- 60% Core content/education
+- 20% Factual examples/metaphors 
+- 10% Humor/entertainment
+- 10% Questions/clarifications
+
+## TECHNICAL SPECIFICATIONS
+
+1. JSON Formatting:
+- No escape characters
+- No special formatting
+- Clean, parseable structure
+- Consistent quotation usage
+
+2. Speech Timing:
+- Average 145 words per minute
+- Natural pauses indicated with angle brackets
+- Varied sentence lengths
+- Rhythm changes for emphasis
+
+3. Quality Checks:
+- Verify JSON validity
+- Check for natural flow
+- Ensure TTS compatibility
+- Maintain consistent tone
+
+4. Accessibility:
+- Clear pronunciation guides in angle brackets
+- Explicit context setting
+- Defined technical terms
+- Inclusive language"
+
+      
+      `);
 
     return NextResponse.json({
       research: createResearchParagraph,

@@ -46,11 +46,19 @@ export function CodeBlock({ code }: { code: string }) {
   };
 
   return (
-    <pre className="bg-muted rounded-md p-3 space-x-5 relative flex items-center px-5 overflow-x-auto">
-      <code className="text-sm">{code}</code>
-      <Button size="icon" onClick={copy} variant={"outline"} className="">
-        {icon}
-      </Button>
-    </pre>
+    <div className="bg-muted rounded-md p-3 h-auto relative">
+      <div className="flex flex-col h-full">
+        <div className="flex-1 overflow-auto">
+          <pre className="text-sm whitespace-pre-wrap">
+            <code>{code}</code>
+          </pre>
+        </div>
+        <div className="flex justify-end mt-2">
+          <Button size="icon" onClick={copy} variant="outline">
+            {icon}
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
