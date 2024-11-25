@@ -2,6 +2,8 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+## Active Link : https://pathaka-ai.netlify.app/
+
 First, run the development server:
 
 ```bash
