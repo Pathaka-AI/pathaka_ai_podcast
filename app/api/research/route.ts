@@ -99,7 +99,7 @@ const askClaude = async (
 
       const defaultParams = {
         model: "claude-3-sonnet-20240229",
-        max_tokens: 3000,
+        max_tokens: 4096,
         temperature: 0.7,
         messages: [{ role: "user", content: prompt }],
       };
@@ -177,7 +177,7 @@ export async function GET(request: Request): Promise<Response> {
     const research = generateResearchParagraph(data);
 
     const createResearchParagraph = await askClaude(`
-      You are an award-winning podcast script writer, responsible for creating highly engaging and conversational scripts. 
+    You are an award-winning podcast script writer, responsible for creating highly engaging and conversational scripts. 
 Your job is to craft realistic and nuanced podcast dialogues, ensuring that the conversation feels authentic, with natural interruptions and a balance of teaching and curiosity between speakers based on the following information:
 - **Research Overview**: ${research.paragraph}
 - **Web Results**: ${data.web.results}
@@ -192,7 +192,7 @@ Incorporate storytelling elements, really insightful observations with facts to 
 
 1. Non-Spoken Content:
    - Place any direction, emotion, or non-verbal cues between angle brackets
-   - Example: "This is spoken <pause for effect> and this is also spoken"
+   - Example: "This is spoken <quietly> and this is also spoken"
    - Example: "Here's what happened next <sound effect: door creaking>"
 
 2. Opening Format:
@@ -204,12 +204,17 @@ Incorporate storytelling elements, really insightful observations with facts to 
    - Never write emotional direction as text (avoid *laughing*, *excited*, etc.)
    - Use "HA!" or "HAHA!" for laughter
    - Use tone and word choice to convey emotion rather than direction
+   - Overusing punctuation like exclaimation marks can also convery surprise and anger
+   - using ALL CAPS will also convey emotion and a need to stress that particular word  
+   - Example: "I know that's the answer!" is more emotionally expressive when written as "I KNOW that's the ANSWER!" 
+   - Example: "Hello? Is anybody here?" is more emotionally expressive when written as "Hello?.... Is ANYBODY here????”
    
 4. Audio Cues:
-   - All technical direction goes in angle brackets
-   - Example: "Let me think about that <3 second pause> okay, got it!"
+   - While technical direction should go in angle brackets, pauses should be inserted with a dash or elipse 
+   - Example: "Let me think about that <break time="1.0s" /> okay.... got it!"
 
 ## SPEAKER PROFILES
+
 ### Host (Speaker 1)
 - Role: Expert guide and storyteller
 
@@ -241,7 +246,7 @@ Speaker 2's responses should include natural expressions like "Hmm," "Umm," or "
   * Occasionally challenges assumptions
   * Occasionally adds related and relevant true facts or figures  
 - Speech Patterns:
-  * Natural reactions ("Hmm", "Oh!", "Wait...")
+  * Natural reactions (Example: "Hmm", "Oh!", "Umm" "Wait...")
   * Brief interjections
   * Thinking out loud
   * Friendly tone
@@ -266,11 +271,14 @@ Divide into 3-4 distinct subtopics:
 - Simple sign-off
 
 ## CONVERSATION DYNAMICS
-
 ### Natural Flow Elements
 
 "
 ### Natural Flow Elements
+### Natural Flow Elements
+
+To make the script even more authentic use the following devises: 
+
 1. Micro-Interruptions:
 json
 {
@@ -280,6 +288,7 @@ json
 
 
 2. Collaborative Thinking:
+
 json
 {
   "id": 2,
@@ -288,26 +297,13 @@ json
 
 
 3. Real-time Processing:
+
 json
 {
   "id": 2,
   "text": "Hmm... let me think about that for a second..."
 }
 
-
-### TTS-Optimized Speech Patterns
-
-1. Emphasis Indicators:
-- Use CAPS for emphasized words (avoid italics or bold)
-- Include pauses using angle brackets <pause: 2s>
-- Break long sentences into shorter segments
-- Use "HA!" or "HAHA!" for laughter
-
-2. Voice Modulation Hints:
-- End statements with period for falling tone
-- Use question marks for rising intonation
-- Em dashes for abrupt transitions
-- Commas for brief pauses
 
 ## JSON STRUCTURE REQUIREMENTS
 
@@ -335,6 +331,8 @@ Avoid any special characters or escape sequences like \n, \t, or \n'.
 - Use contractions (I'm, you're, isn't)
 - Include false starts occasionally
 - Script in thinking sounds like "umm" or "err" naturally
+- Break long sentences into shorter segments
+- Use question marks for rising intonation
 
 2. Educational Components:
 - Break complex ideas into digestible chunks
@@ -343,16 +341,16 @@ Avoid any special characters or escape sequences like \n, \t, or \n'.
 - Reference familiar concepts
 
 3. Engagement Techniques:
-- Create mini-cliffhangers between segments
+- Sometimes use create mini-cliffhangers between thematic segments
 - Use callback references to earlier points
 - Include unexpected facts or perspectives
-- Build running jokes or themes
 
-4. TTS Optimization:
+4. 
 - Avoid ambiguous abbreviations
+- Consistent speaker identification
 - Use full words instead of numbers
 - Clear pronunciation guidance for unusual terms
-- Consistent speaker identification
+
 
 ## CONTENT BALANCE
 
@@ -386,8 +384,10 @@ Maintain these ratios:
 - Clear pronunciation guides in angle brackets
 - Explicit context setting
 - Defined technical terms
-- Inclusive language"
+- Inclusive language
 
+5. Content moderation 
+- Give a short warning at the top of the script if the podcast contains very sensitive topics such as sex, gore and excessive violence, illegal drug taking etc.  
       
       `);
 
