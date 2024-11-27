@@ -22,6 +22,31 @@ interface ResearchParagraph {
   };
 }
 
+function convertScriptToJson(scriptText:string) {
+  // Split the text into lines
+  const lines = scriptText.split('\n');
+  const result = [];
+  
+  for (const line of lines) {
+    // Skip empty lines or lines without speakers
+    if (!line.trim() || (!line.startsWith('Speaker 1:') && !line.startsWith('Speaker 2:'))) {
+      continue;
+    }
+    
+    // Extract speaker number and text
+    const match = line.match(/Speaker (\d+):\s*(.*)/);
+    if (match) {
+      const [, speakerId, text] = match;
+      result.push({
+        id: parseInt(speakerId),
+        text: text.trim()
+      });
+    }
+  }
+  
+  return result;
+}
+
 // Function to generate a research paragraph from data
 function generateResearchParagraph(data: Data): ResearchParagraph {
   const wordFrequency: Record<string, number> = {};
@@ -99,7 +124,7 @@ const askClaude = async (
 
       const defaultParams = {
         model: "claude-3-sonnet-20240229",
-        max_tokens: 1500,
+        max_tokens: 1024,
         temperature: 0.7,
         messages: [{ role: "user", content: prompt }],
       };
@@ -114,7 +139,18 @@ const askClaude = async (
         attempt: attempt + 1,
       });
 
-      return response;
+      console.log("Podcast Script:", response.content[0].text);
+      console.log("Podcast Script JSON:", typeof(response.content[0].text));
+
+      // Example usage:
+      const podcastScript = `${response.content[0].text}`;
+      const jsonFormat = convertScriptToJson(podcastScript);
+      console.log(jsonFormat);
+
+      return {
+        ...response,
+        podcast_script: jsonFormat
+      };
     } catch (error: any) {
       const isOverloaded = error.message.includes("overloaded");
       const isLastAttempt = attempt === maxRetries - 1;
@@ -202,7 +238,6 @@ Incorporate storytelling elements, really insightful observations with facts to 
 
 3. Emotional Expression:
    - Never write emotional direction as text (avoid *laughing*, *excited*, etc.)
-   - Use "HA!" or "HAHA!" for laughter
    - Use tone and word choice to convey emotion rather than direction
    - Overusing punctuation like exclaimation marks can also convery surprise and anger
    - using ALL CAPS will also convey emotion and a need to stress that particular word  
@@ -280,48 +315,16 @@ Divide into 3-4 distinct subtopics:
 To make the script even more authentic use the following devises: 
 
 1. Micro-Interruptions:
-json
-{
-  "id": 2,
-  "text": "Oh wait, sorry to jump in, but..."
-}
+  Speaker2: "Oh wait, sorry to jump in, but..."
 
 
 2. Collaborative Thinking:
-
-json
-{
-  "id": 2,
-  "text": "So what you're saying is... [rephrases concept]"
-}
+  Speaker 2: "So what you're saying is... [rephrases concept]"
 
 
 3. Real-time Processing:
+  Speaker 2: "Hmm... let me think about that for a second..."
 
-json
-{
-  "id": 2,
-  "text": "Hmm... let me think about that for a second..."
-}
-
-
-## JSON STRUCTURE REQUIREMENTS
-
-json
-[
-  {
-    "id": 1,
-    "text": "Clear, TTS-friendly text with natural speech patterns"
-  },
-  {
-    "id": 2,
-    "text": "Response with appropriate reactions and ENERGY!!"
-  }
-]
-
-
-Starts response with [ 
-Ends with ]
 
 Avoid any special characters or escape sequences like \n, \t, or \n'.
 
@@ -387,13 +390,20 @@ Maintain these ratios:
 - Inclusive language
 
 5. Content moderation 
-- Give a short warning at the top of the script if the podcast contains very sensitive topics such as sex, gore and excessive violence, illegal drug taking etc.  
+- Give a short warning at the top of the script if the podcast contains very sensitive topics such as sex, gore and excessive violence, illegal drug taking etc.
       
-      `);
+## Output Format
+      - Always write Speaker 1 and Speaker 2 in the script
+      - Speaker 1: Hello everyone, I'm Alex.
+      - Speaker 2: Hi Alex, I'm really excited to be here today.
+      - Note : Speaker 1 is Male and Speaker 2 is Female so name them accordingly.
+`);
+
 
     return NextResponse.json({
       research: createResearchParagraph,
       brave_search_results: data.web.results,
+      podcast_script: createResearchParagraph.podcast_script
     });
   } catch (error: any) {
     console.error("Error processing request:", error.message);
