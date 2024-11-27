@@ -99,7 +99,7 @@ const askClaude = async (
 
       const defaultParams = {
         model: "claude-3-sonnet-20240229",
-        max_tokens: 1500,
+        max_tokens: 4096,
         temperature: 0.7,
         messages: [{ role: "user", content: prompt }],
       };
