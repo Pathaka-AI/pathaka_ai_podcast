@@ -128,7 +128,7 @@ const askClaude = async (
 
       const defaultParams = {
         model: "claude-3-sonnet-20240229", // Using opus model for longer outputs
-        max_tokens: 4096,
+        max_tokens: 1024,
         temperature: 0.3,
         messages: [{ role: "user", content: prompt }],
       };
