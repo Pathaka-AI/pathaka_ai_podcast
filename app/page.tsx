@@ -1,10 +1,11 @@
 "use client";
 import { CodeBlock } from "@/components/code-block";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { example_response } from "@/lib/utils";
 import React, { useState } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Mic, Pause, Play, Download } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Card } from "@/components/ui/card";
+import { useRef, useEffect } from "react";
 
 interface Topic {
   title: string;
@@ -23,6 +24,8 @@ interface ResearchResponse {
     description: string;
     url: string;
   }>;
+  podcast_script: any[];
+  error?: string;
 }
 
 export default function ResearchPodcast() {
@@ -34,6 +37,88 @@ export default function ResearchPodcast() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [error, setError] = useState<string>("");
   const [showSuggestions, setShowSuggestions] = useState(true);
+  const [podScript, setPodScript] = useState<any[]>([]);
+  const [podcastAudio, setPodcastAudio] = useState<string>("");
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [prompt, setPrompt] = useState("");
+
+  const handlePlayPauseAudio = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        audioRef.current.play();
+        setIsPlaying(true);
+      }
+    }
+  };
+
+  const handleSliderChange = (value: number[]) => {
+    const newTime = value[0];
+    if (audioRef.current) {
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  };
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
+
+  useEffect(() => {
+    if (audioRef.current) {
+      const handleLoadedMetadata = () => {
+        setDuration(audioRef.current?.duration || 0);
+      };
+
+      const handleTimeUpdate = () => {
+        setCurrentTime(audioRef.current?.currentTime || 0);
+      };
+
+      audioRef.current.addEventListener("loadedmetadata", handleLoadedMetadata);
+      audioRef.current.addEventListener("timeupdate", handleTimeUpdate);
+
+      return () => {
+        if (audioRef.current) {
+          audioRef.current.removeEventListener(
+            "loadedmetadata",
+            handleLoadedMetadata
+          );
+          audioRef.current.removeEventListener("timeupdate", handleTimeUpdate);
+        }
+      };
+    }
+  }, [podcastAudio]);
+
+  const handleGenerateElevenLabsPodcast = async () => {
+    setLoading(true);
+    setPodcastScript("");
+    setSearchResults([]);
+
+    try {
+      const response = await fetch(`/api/elevenlabs`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(podScript),
+      });
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      setPodcastAudio(audioUrl);
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleGetSuggestions = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,9 +153,11 @@ export default function ResearchPodcast() {
 
     try {
       const response = await fetch(
-        `/api/research?q=${encodeURIComponent(selectedTopic)}`
+        `/api/research?q=${encodeURIComponent(
+          selectedTopic
+        )}&prompt=${encodeURIComponent(prompt)}`
       );
-      const data: any = await response.json();
+      const data: ResearchResponse = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to fetch research");
@@ -78,6 +165,7 @@ export default function ResearchPodcast() {
 
       const formattedScript = JSON.stringify(data, null, 2);
       setPodcastScript(formattedScript);
+      setPodScript(data.podcast_script);
       setSearchResults(data?.brave_search_results);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -88,6 +176,19 @@ export default function ResearchPodcast() {
 
   const LoadingSkeleton = () => (
     <div className="animate-pulse">
+      <div className="flex flex-col items-center justify-center space-y-6 p-4">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center">
+            <Mic className="h-8 w-8 text-white animate-pulse" />
+          </div>
+          <div className="space-y-2">
+            <div className="h-4 w-48 bg-gray-700 rounded animate-pulse" />
+            <div className="h-3 w-32 bg-gray-700 rounded animate-pulse" />
+          </div>
+        </div>
+        <span className="text-gray-700 font-semibold">Generating audio...</span>
+      </div>
+
       {/* Podcast Script Skeleton */}
       <div className="mb-8">
         <div className="h-8 w-64 bg-gray-800 rounded mb-4" />
@@ -139,6 +240,15 @@ export default function ResearchPodcast() {
               >
                 {suggestionsLoading ? "Finding topics..." : "Get Topic Ideas"}
               </button>
+            </div>
+            <div className="flex mt-5">
+              <input
+                type="text"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Prompt"
+                className=" p-2 border rounded w-[680px]"
+              />
             </div>
           </form>
 
@@ -195,9 +305,53 @@ export default function ResearchPodcast() {
           ) : (
             <>
               {podcastScript && (
-                <div className="whitespace-pre-wrap">
-                  <CodeBlock code={podcastScript} />
-                </div>
+                <>
+                  <Button
+                    className="flex justify-center"
+                    onClick={handleGenerateElevenLabsPodcast}
+                  >
+                    Generate Podcast
+                  </Button>
+                  <div className="whitespace-pre-wrap mt-5">
+                    <CodeBlock code={podcastScript} />
+                  </div>
+                </>
+              )}
+
+              {podcastAudio && (
+                <Card className="p-6 bg-gray-900 border-gray-500 w-full max-w-2xl mt-10">
+                  <div className="flex items-center gap-4">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="w-12 h-12 rounded-full bg-primary flex items-center justify-center bg-gray-800"
+                      onClick={handlePlayPauseAudio}
+                    >
+                      {isPlaying ? (
+                        <Pause className="h-6 w-6" />
+                      ) : (
+                        <Play className="h-6 w-6" />
+                      )}
+                    </Button>
+                    <div className="flex-1 space-y-2">
+                      <Slider
+                        value={[currentTime]}
+                        max={duration}
+                        step={0.1}
+                        onValueChange={(value) => handleSliderChange(value)}
+                        className="w-full rounded-lg bg-gray-300 cursor-pointer mt-6"
+                      />
+                      <div className="flex justify-between text-sm text-gray-400">
+                        <span>{formatTime(currentTime)}</span>
+                        <span>{formatTime(duration)}</span>
+                      </div>
+                    </div>
+                    <a href={podcastAudio} download="generated_audio.mp3">
+                      <Download className="h-5 w-5 text-white" />
+                    </a>
+                  </div>
+                  <audio ref={audioRef} src={podcastAudio} />
+                </Card>
               )}
 
               {searchResults?.length > 0 && (
