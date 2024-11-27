@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { default_podcast_prompt } from "@/lib/utils";
 
 interface WebResult {
   title: string;
@@ -22,28 +23,31 @@ interface ResearchParagraph {
   };
 }
 
-function convertScriptToJson(scriptText:string) {
+function convertScriptToJson(scriptText: string) {
   // Split the text into lines
-  const lines = scriptText.split('\n');
+  const lines = scriptText.split("\n");
   const result = [];
-  
+
   for (const line of lines) {
     // Skip empty lines or lines without speakers
-    if (!line.trim() || (!line.startsWith('Speaker 1:') && !line.startsWith('Speaker 2:'))) {
+    if (
+      !line.trim() ||
+      (!line.startsWith("Speaker 1:") && !line.startsWith("Speaker 2:"))
+    ) {
       continue;
     }
-    
+
     // Extract speaker number and text
     const match = line.match(/Speaker (\d+):\s*(.*)/);
     if (match) {
       const [, speakerId, text] = match;
       result.push({
         id: parseInt(speakerId),
-        text: text.trim()
+        text: text.trim(),
       });
     }
   }
-  
+
   return result;
 }
 
@@ -123,9 +127,9 @@ const askClaude = async (
       });
 
       const defaultParams = {
-        model: "claude-3-sonnet-20240229",
-        max_tokens: 1024,
-        temperature: 0.7,
+        model: "claude-3-sonnet-20240229", // Using opus model for longer outputs
+        max_tokens: 4096,
+        temperature: 0.3,
         messages: [{ role: "user", content: prompt }],
       };
 
@@ -140,7 +144,7 @@ const askClaude = async (
       });
 
       console.log("Podcast Script:", response.content[0].text);
-      console.log("Podcast Script JSON:", typeof(response.content[0].text));
+      console.log("Podcast Script JSON:", typeof response.content[0].text);
 
       // Example usage:
       const podcastScript = `${response.content[0].text}`;
@@ -149,7 +153,7 @@ const askClaude = async (
 
       return {
         ...response,
-        podcast_script: jsonFormat
+        podcast_script: jsonFormat,
       };
     } catch (error: any) {
       const isOverloaded = error.message.includes("overloaded");
@@ -169,247 +173,109 @@ const askClaude = async (
   }
 };
 
-// Convert Express route to Next.js route handler
+// Add new function for fetching web research
+async function fetchWebResearch(searchQuery: string) {
+  const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(
+    searchQuery
+  )}`;
+  const braveApiKey = process.env.NEXT_BRAVE_API_KEY;
+
+  if (!braveApiKey) {
+    throw new Error("Missing Brave API key");
+  }
+
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      "X-Subscription-Token": braveApiKey,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error from Brave API: ${response.statusText}`);
+  }
+
+  return await response.json();
+}
+
+// Add the new generatePodcastScript function
+async function generatePodcastScript(searchQuery: string, prompt?: string) {
+  // Step 1: Initial Research Generation
+  const researchData = await fetchWebResearch(searchQuery);
+  const research = generateResearchParagraph(researchData);
+
+  // Step 2: Define script stages with focused prompts
+  const scriptStages = [
+    {
+      stage: "Introduction",
+      prompt: `You are writing a podcast introduction (5-7 minutes).
+      Research Context: ${research.paragraph}
+      Key Topics: ${research.analysis.topWords.slice(0, 5).join(", ")}
+      
+      Create an engaging opening that introduces the speakers and topic.
+      ${prompt || default_podcast_prompt}
+      
+      Output Format:
+      Speaker 1: [Male voice]
+      Speaker 2: [Female voice]`,
+    },
+    // ... other stages similar to your original code ...
+  ];
+
+  // Step 3: Generate script stages with parallel processing
+  const stagePromises = scriptStages.map((stage) =>
+    askClaude(stage.prompt, {
+      max_tokens: 4096,
+      temperature: 0.7,
+    }).catch((error) => ({
+      error: `Error in ${stage.stage}: ${error.message}`,
+      content: [{ text: "" }],
+    }))
+  );
+
+  const stageResults = await Promise.all(stagePromises);
+
+  // Step 4: Combine and process results
+  const fullScript = stageResults
+    .map((result) => result.content[0].text)
+    .join("\n\n");
+
+  return {
+    fullScript,
+    jsonScript: convertScriptToJson(fullScript),
+    research,
+  };
+}
+
+// Update the GET route handler
 export async function GET(request: Request): Promise<Response> {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q");
+  const prompt = searchParams.get("prompt");
 
-  // For demo purposes
-  const DEMO = "History about Sanskrit Language";
-  const searchQuery = query;
-
-  if (!searchQuery) {
+  if (!query) {
     return NextResponse.json(
-      {
-        error: "Missing search query",
-      },
+      { error: "Missing search query" },
       { status: 400 }
     );
   }
 
   try {
-    const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(
-      searchQuery
-    )}`;
-    const braveApiKey = process.env.NEXT_BRAVE_API_KEY;
-    if (!braveApiKey) {
-      throw new Error("Missing Brave API key");
-    }
-
-    const headers = {
-      Accept: "application/json",
-      "X-Subscription-Token": braveApiKey,
-    };
-    if (!headers) {
-      throw new Error("Missing Brave API headers");
-    }
-    const response = await fetch(url, { headers });
-
-    if (!response.ok) {
-      throw new Error(`Error from Brave API: ${response.statusText}`);
-    }
-
-    const data: Data = await response.json();
-    const research = generateResearchParagraph(data);
-
-    const createResearchParagraph = await askClaude(`
-    You are an award-winning podcast script writer, responsible for creating highly engaging and conversational scripts. 
-Your job is to craft realistic and nuanced podcast dialogues, ensuring that the conversation feels authentic, with natural interruptions and a balance of teaching and curiosity between speakers based on the following information:
-- **Research Overview**: ${research.paragraph}
-- **Web Results**: ${data.web.results}
-- **Analysis Insights**: ${research.analysis}
- Minimum 3,250 to 4,000 words. Strictly follow the guidelines below:
-
-The script should be written as a dynamic conversation between two hosts, keeping the tone lively, engaging, and accessible. The discussion should feel natural and captivating for a broad audience, sustaining interest for a duration of approximately 25 minutes which is around 3,250 to 4,000 words.
-
-Incorporate storytelling elements, really insightful observations with facts to make the podcast both educational and entertaining. Without specifically labelling this in the script, structure the content and ensure the dialogue flows seamlessly, keeping the audience hooked throughout.
-
-## CRITICAL TTS RULES
-
-1. Non-Spoken Content:
-   - Place any direction, emotion, or non-verbal cues between angle brackets
-   - Example: "This is spoken <quietly> and this is also spoken"
-   - Example: "Here's what happened next <sound effect: door creaking>"
-
-2. Opening Format:
-   - Hosts should introduce themselves directly without show titles or episode names
-   - Example: "Hi everyone, I'm Alex."
-   - Never include podcast name or episode title in the spoken script
-
-3. Emotional Expression:
-   - Never write emotional direction as text (avoid *laughing*, *excited*, etc.)
-   - Use tone and word choice to convey emotion rather than direction
-   - Overusing punctuation like exclaimation marks can also convery surprise and anger
-   - using ALL CAPS will also convey emotion and a need to stress that particular word  
-   - Example: "I know that's the answer!" is more emotionally expressive when written as "I KNOW that's the ANSWER!" 
-   - Example: "Hello? Is anybody here?" is more emotionally expressive when written as "Hello?.... Is ANYBODY here????”
-   
-4. Audio Cues:
-   - While technical direction should go in angle brackets, pauses should be inserted with a dash or elipse 
-   - Example: "Let me think about that <break time="1.0s" /> okay.... got it!"
-
-## SPEAKER PROFILES
-
-### Host (Speaker 1)
-- Role: Expert guide and storyteller
-
-Speaker 1 Leads the conversation, offering deep insights, fascinating examples, and metaphors about the topic. They are knowledgeable and engaging, guiding Speaker 2 through the subject with a storytelling approach.
-
-- Personality Traits:
-  * Knowledgeable but approachable
-  * Enthusiastic about sharing insights
-  * Uses metaphors and analogies effectively
-  * Occasionally self-deprecating
-  * Responds thoughtfully to questions
-- Speech Patterns:
-  * Varied pace and emphasis
-  * Clear articulation
-  * Strategic pauses for emphasis
-  * Occasional verbal backtracking for authenticity
-
-### Co-Host (Speaker 2)
-- Role: Curious learner and audience surrogate
-
-Speaker 2 is Curious, genuinely interested, and occasionally humorous, asking follow-up questions to clarify points, repeats points back to the audience, express excitement or confusion. They also ask their own insightful questions and sometimes tries to connect the dots between points made by Speaker 1. 
-Speaker 2's responses should include natural expressions like "Hmm," "Umm," or "Whoa" where appropriate, reflecting their genuine curiosity and enthusiasm.
-
-- Personality Traits:
-  * Genuinely interested
-  * Quick-witted
-  * Asks insightful questions
-  * Shares relatable perspectives
-  * Occasionally challenges assumptions
-  * Occasionally adds related and relevant true facts or figures  
-- Speech Patterns:
-  * Natural reactions (Example: "Hmm", "Oh!", "Umm" "Wait...")
-  * Brief interjections
-  * Thinking out loud
-  * Friendly tone
-
-## EPISODE STRUCTURE
-
-### Opening Segment (5 minutes)
-- Simple host introductions
-- Topic introduction
-- Initial co-host reactions
-
-### Main Content (20 minutes)
-Divide into 3-4 distinct subtopics:
-1. Foundation/Background
-2. A narrative series of key insights
-3. Analysis
-4. Implications
-
-### Closing Segment (5 minutes)
-- Key takeaways
-- Personal reflections
-- Simple sign-off
-
-## CONVERSATION DYNAMICS
-### Natural Flow Elements
-
-"
-### Natural Flow Elements
-### Natural Flow Elements
-
-To make the script even more authentic use the following devises: 
-
-1. Micro-Interruptions:
-  Speaker2: "Oh wait, sorry to jump in, but..."
-
-
-2. Collaborative Thinking:
-  Speaker 2: "So what you're saying is... [rephrases concept]"
-
-
-3. Real-time Processing:
-  Speaker 2: "Hmm... let me think about that for a second..."
-
-
-Avoid any special characters or escape sequences like \n, \t, or \n'.
-
-## QUALITY GUIDELINES
-
-1. Conversational Elements:
-- Use contractions (I'm, you're, isn't)
-- Include false starts occasionally
-- Script in thinking sounds like "umm" or "err" naturally
-- Break long sentences into shorter segments
-- Use question marks for rising intonation
-
-2. Educational Components:
-- Break complex ideas into digestible chunks
-- Use relevant metaphors
-- Provide real-world examples
-- Reference familiar concepts
-
-3. Engagement Techniques:
-- Sometimes use create mini-cliffhangers between thematic segments
-- Use callback references to earlier points
-- Include unexpected facts or perspectives
-
-4. 
-- Avoid ambiguous abbreviations
-- Consistent speaker identification
-- Use full words instead of numbers
-- Clear pronunciation guidance for unusual terms
-
-
-## CONTENT BALANCE
-
-Maintain these ratios:
-- 60% Core content/education
-- 20% Factual examples/metaphors 
-- 10% Humor/entertainment
-- 10% Questions/clarifications
-
-## TECHNICAL SPECIFICATIONS
-
-1. JSON Formatting:
-- No escape characters
-- No special formatting
-- Clean, parseable structure
-- Consistent quotation usage
-
-2. Speech Timing:
-- Average 145 words per minute
-- Natural pauses indicated with angle brackets
-- Varied sentence lengths
-- Rhythm changes for emphasis
-
-3. Quality Checks:
-- Verify JSON validity
-- Check for natural flow
-- Ensure TTS compatibility
-- Maintain consistent tone
-
-4. Accessibility:
-- Clear pronunciation guides in angle brackets
-- Explicit context setting
-- Defined technical terms
-- Inclusive language
-
-5. Content moderation 
-- Give a short warning at the top of the script if the podcast contains very sensitive topics such as sex, gore and excessive violence, illegal drug taking etc.
-      
-## Output Format
-      - Always write Speaker 1 and Speaker 2 in the script
-      - Speaker 1: Hello everyone, I'm Alex.
-      - Speaker 2: Hi Alex, I'm really excited to be here today.
-      - Note : Speaker 1 is Male and Speaker 2 is Female so name them accordingly.
-`);
-
+    const { fullScript, jsonScript, research } = await generatePodcastScript(
+      query,
+      prompt || undefined
+    );
 
     return NextResponse.json({
-      research: createResearchParagraph,
-      brave_search_results: data.web.results,
-      podcast_script: createResearchParagraph.podcast_script
+      research,
+      full_script: fullScript,
+      podcast_script: jsonScript,
     });
   } catch (error: any) {
-    console.error("Error processing request:", error.message);
+    console.error("Script Generation Error:", error);
     return NextResponse.json(
       {
-        error: "Failed to process request",
+        error: "Failed to generate podcast script",
         details: error.message,
       },
       { status: 500 }

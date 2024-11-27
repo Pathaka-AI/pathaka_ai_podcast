@@ -7,8 +7,6 @@ import { Slider } from "@/components/ui/slider";
 import { Card } from "@/components/ui/card";
 import { useRef, useEffect } from "react";
 
-
-
 interface Topic {
   title: string;
   description: string;
@@ -29,8 +27,6 @@ interface ResearchResponse {
   podcast_script: any[];
   error?: string;
 }
-
-
 
 export default function ResearchPodcast() {
   const [query, setQuery] = useState("");
@@ -62,55 +58,56 @@ export default function ResearchPodcast() {
   };
 
   const handleSliderChange = (value: number[]) => {
-    const newTime = value[0]
+    const newTime = value[0];
     if (audioRef.current) {
-      audioRef.current.currentTime = newTime
-      setCurrentTime(newTime)
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
     }
-  }
+  };
 
   const formatTime = (time: number) => {
-    const minutes = Math.floor(time / 60)
-    const seconds = Math.floor(time % 60)
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`
-  }
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
 
   useEffect(() => {
     if (audioRef.current) {
       const handleLoadedMetadata = () => {
-        setDuration(audioRef.current?.duration || 0)
-      }
+        setDuration(audioRef.current?.duration || 0);
+      };
 
       const handleTimeUpdate = () => {
-        setCurrentTime(audioRef.current?.currentTime || 0)
-      }
+        setCurrentTime(audioRef.current?.currentTime || 0);
+      };
 
-      audioRef.current.addEventListener('loadedmetadata', handleLoadedMetadata)
-      audioRef.current.addEventListener('timeupdate', handleTimeUpdate)
+      audioRef.current.addEventListener("loadedmetadata", handleLoadedMetadata);
+      audioRef.current.addEventListener("timeupdate", handleTimeUpdate);
 
       return () => {
         if (audioRef.current) {
-          audioRef.current.removeEventListener('loadedmetadata', handleLoadedMetadata)
-          audioRef.current.removeEventListener('timeupdate', handleTimeUpdate)
+          audioRef.current.removeEventListener(
+            "loadedmetadata",
+            handleLoadedMetadata
+          );
+          audioRef.current.removeEventListener("timeupdate", handleTimeUpdate);
         }
-      }
+      };
     }
-  }, [podcastAudio])
-
-
+  }, [podcastAudio]);
 
   const handleGenerateElevenLabsPodcast = async () => {
     setLoading(true);
     setPodcastScript("");
     setSearchResults([]);
-    
+
     try {
       const response = await fetch(`/api/elevenlabs`, {
         method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(podScript)
+        body: JSON.stringify(podScript),
       });
 
       const audioBlob = await response.blob();
@@ -121,7 +118,7 @@ export default function ResearchPodcast() {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   const handleGetSuggestions = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,7 +128,7 @@ export default function ResearchPodcast() {
 
     try {
       const response = await fetch(
-        `/api/topics?q=${encodeURIComponent(query)}&prompt=${encodeURIComponent(prompt)}`
+        `/api/topics?q=${encodeURIComponent(query)}`
       );
       const data = await response.json();
 
@@ -156,7 +153,9 @@ export default function ResearchPodcast() {
 
     try {
       const response = await fetch(
-        `/api/research?q=${encodeURIComponent(selectedTopic)}`
+        `/api/research?q=${encodeURIComponent(
+          selectedTopic
+        )}&prompt=${encodeURIComponent(prompt)}`
       );
       const data: ResearchResponse = await response.json();
 
@@ -179,16 +178,16 @@ export default function ResearchPodcast() {
     <div className="animate-pulse">
       <div className="flex flex-col items-center justify-center space-y-6 p-4">
         <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center">
-                <Mic className="h-8 w-8 text-white animate-pulse" />
-             </div>
-         <div className="space-y-2">
-            <div className="h-4 w-48 bg-gray-700 rounded animate-pulse" />
-                <div className="h-3 w-32 bg-gray-700 rounded animate-pulse" />
-            </div>
+          <div className="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center">
+            <Mic className="h-8 w-8 text-white animate-pulse" />
           </div>
-          <span className="text-gray-700 font-semibold">Generating audio...</span>
+          <div className="space-y-2">
+            <div className="h-4 w-48 bg-gray-700 rounded animate-pulse" />
+            <div className="h-3 w-32 bg-gray-700 rounded animate-pulse" />
+          </div>
         </div>
+        <span className="text-gray-700 font-semibold">Generating audio...</span>
+      </div>
 
       {/* Podcast Script Skeleton */}
       <div className="mb-8">
@@ -243,7 +242,7 @@ export default function ResearchPodcast() {
               </button>
             </div>
             <div className="flex mt-5">
-            <input 
+              <input
                 type="text"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
@@ -307,9 +306,14 @@ export default function ResearchPodcast() {
             <>
               {podcastScript && (
                 <>
-                  <Button className="flex justify-center" onClick={handleGenerateElevenLabsPodcast}>Generate Podcast</Button>
+                  <Button
+                    className="flex justify-center"
+                    onClick={handleGenerateElevenLabsPodcast}
+                  >
+                    Generate Podcast
+                  </Button>
                   <div className="whitespace-pre-wrap mt-5">
-                  <CodeBlock code={podcastScript} />
+                    <CodeBlock code={podcastScript} />
                   </div>
                 </>
               )}
@@ -333,8 +337,8 @@ export default function ResearchPodcast() {
                       <Slider
                         value={[currentTime]}
                         max={duration}
-                      step={0.1}
-                      onValueChange={(value) => handleSliderChange(value)}
+                        step={0.1}
+                        onValueChange={(value) => handleSliderChange(value)}
                         className="w-full rounded-lg bg-gray-300 cursor-pointer mt-6"
                       />
                       <div className="flex justify-between text-sm text-gray-400">
