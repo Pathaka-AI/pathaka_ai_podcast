@@ -211,12 +211,40 @@ async function generatePodcastScript(searchQuery: string, prompt?: string) {
       prompt: `You are writing a podcast introduction (5-7 minutes).
       Research Context: ${research.paragraph}
       Key Topics: ${research.analysis.topWords.slice(0, 5).join(", ")}
+      Research Data: ${researchData}
       
       Create an engaging opening that introduces the speakers and topic.
       ${prompt || default_podcast_prompt}
       
       Output Format:
       Speaker 1: [Male voice]
+      Speaker 2: [Female voice]`,
+    },
+    {
+      stage: "MainDiscussion",
+      prompt: `You are writing the main discussion section of a podcast (10-15 minutes).
+      Research Context: ${research.paragraph}
+      Key Topics: ${research.analysis.topWords.slice(0, 5).join(", ")}
+      Research Data: ${researchData}
+      
+      Create an in-depth discussion that explores the key topics and insights.
+      Include back-and-forth dialogue between speakers with different perspectives.
+      
+      Output Format:
+      Speaker 1: [Male voice]
+      Speaker 2: [Female voice]`,
+    },
+    {
+      stage: "Conclusion",
+      prompt: `You are writing the podcast conclusion (3-5 minutes).
+      Research Context: ${research.paragraph}
+      Key Topics: ${research.analysis.topWords.slice(0, 5).join(", ")}
+      Research Data: ${researchData}
+      Summarize key takeaways and end with engaging closing thoughts.
+      Thank listeners and tease next episode if relevant.
+s
+      Output Format:
+      Speaker 1: [Male voice] 
       Speaker 2: [Female voice]`,
     },
     // ... other stages similar to your original code ...
