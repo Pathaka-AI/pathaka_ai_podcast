@@ -150,7 +150,7 @@ const generateOutline = async (context: any, searchResults: any) => {
 Search Results:
 ${JSON.stringify(searchResults, null, 2)} 
 
-1. An introduction that sets up the main themes
+1. An introduction that establishes up the main themes
 2. Six distinct subtopics, each with a four-line summary explaining:
    - The key point or argument
    - Supporting evidence or examples
@@ -187,7 +187,7 @@ Return the outline in the following JSON format:
   }
 }
 
-##FURTHER GUIDELINES 
+##FURTHER OUTLINE GUIDELINES 
 
 - Ensure each subtopic is substantive and engaging. 
 - Avoiding surface-level observations. 
@@ -199,7 +199,7 @@ Return the outline in the following JSON format:
 `;
 
   const response = await anthropic.messages.create({
-    model: "claude-3-sonnet-20240229",
+    model: "claude-3-5-sonnet-20241022",
     max_tokens: 4096,
     temperature: 0.3,
     messages: [{ role: "user", content: prompt }],
