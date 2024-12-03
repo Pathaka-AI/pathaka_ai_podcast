@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       );
     }
     console.log("Starting podcast generation...");
-    let podcast_script: any = await req.json();
+    const podcast_script: any = await req.json();
 
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();

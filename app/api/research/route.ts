@@ -151,16 +151,16 @@ Search Results:
 ${JSON.stringify(searchResults, null, 2)} 
 
 1. An introduction that sets up the main themes
-2. Seven distinct subtopics, each with a seven-line summary explaining:
+2. Six distinct subtopics, each with a four-line summary explaining:
    - The key point or argument
    - Supporting evidence or examples
    - How it connects to the broader narrative
 3. A conclusion that synthesizes the most fascinating points and intriguing elements discussed
 
-The outline should maintain a narrative flow, with each subtopic building upon previous ones.
+The outline should maintain a narrative flow, with each subtopic linking with previous ones. 
 
 [CONTEXT]
-CONTEXT: ${context}
+{context}
 [END CONTEXT]
 
 Return the outline in the following JSON format:
@@ -187,9 +187,14 @@ Return the outline in the following JSON format:
   }
 }
 
-give me response in JSON format btw { } and there shoudnt be any json parse error for me
+##FURTHER GUIDELINES 
 
-Ensure each subtopic is substantive and engaging, avoiding surface-level observations. Make explicit connections between subtopics to create a cohesive narrative thread throughout the podcast.
+- Ensure each subtopic is substantive and engaging. 
+- Avoiding surface-level observations. 
+- Make explicit connections between subtopics to create a cohesive narrative thread throughout the podcast.
+- If appropriate, make one subtopic the focus of biographical, or backstory material.
+- If appropriate, make one subtopic the focus of controversies and debates.
+- If appropriate, include a 'breakthrough moment' where key revelations occur within at least one subtopic.
 
 `;
 
@@ -205,7 +210,6 @@ Ensure each subtopic is substantive and engaging, avoiding surface-level observa
 
 const generateScript = async (context: any, outline: any) => {
   const subtopics = outline.subtopics;
-  let complete_script = "";
 
   // Generate introduction (500 words)
   let intro = "";
@@ -349,14 +353,7 @@ export async function GET(request: Request): Promise<Response> {
       { status: 400 }
     );
   }
-  const cleanJsonString = (jsonString: string): string => {
-    const firstBrace = jsonString.indexOf("{");
-    const lastBrace = jsonString.lastIndexOf("}");
-    if (firstBrace === -1 || lastBrace === -1) {
-      throw new Error("Invalid JSON string - missing braces");
-    }
-    return jsonString.slice(firstBrace, lastBrace + 1);
-  };
+
   try {
     // 1. Get research from Brave
     const searchResults = await fetchWebResearch(query);
@@ -374,13 +371,8 @@ export async function GET(request: Request): Promise<Response> {
     console.log(outline);
     // 3. Generate podcast script with GPT-4
 
-    let jsonParsedOutline;
-    // try {
-    jsonParsedOutline = JSON.parse(outline);
+    const jsonParsedOutline = JSON.parse(outline);
     console.log(jsonParsedOutline);
-    // } catch (error) {
-    //   console.error("Error parsing context as JSON:", error);
-    //   // Handle the error here, such as providing a default context or returning an error response
 
     console.log("GENERATING SCRIPT NOW");
     // }
