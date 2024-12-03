@@ -22,17 +22,16 @@ export const example_response = `
         "stop_sequence": null,
         "usage": {
             "input_tokens": 286,
-            "output_tokens": 1024
+            "output_tokens": 4024
         }
     }
 }
 `;
 
 export const default_podcast_prompt = `
-Minimum 3,250 to 4,000 words. Strictly follow the guidelines below:
+Strictly follow the guidelines below:
 
-The script should be written as a dynamic conversation between two hosts, keeping the tone lively, engaging, and accessible. The discussion should feel natural and captivating for a broad audience, sustaining interest for a duration of approximately 25 minutes which is around 3,250 to 4,000 words.
-
+The script should be written as a dynamic conversation between two hosts, keeping the tone lively, engaging, and accessible. The discussion should feel natural and captivating for a broad audience, sustaining interest for a duration of approximately 25 minutes which is around 24500 characters in length.
 Incorporate storytelling elements, really insightful observations with facts to make the podcast both educational and entertaining. Without specifically labelling this in the script, structure the content and ensure the dialogue flows seamlessly, keeping the audience hooked throughout.
 
 ## CRITICAL TTS RULES
@@ -40,7 +39,6 @@ Incorporate storytelling elements, really insightful observations with facts to 
 1. Non-Spoken Content:
    - Place any direction, emotion, or non-verbal cues between angle brackets
    - Example: "This is spoken <quietly> and this is also spoken"
-   - Example: "Here's what happened next <sound effect: door creaking>"
 
 2. Opening Format:
    - Hosts should introduce themselves directly without show titles or episode names
@@ -53,11 +51,63 @@ Incorporate storytelling elements, really insightful observations with facts to 
    - Overusing punctuation like exclaimation marks can also convery surprise and anger
    - using ALL CAPS will also convey emotion and a need to stress that particular word  
    - Example: "I know that's the answer!" is more emotionally expressive when written as "I KNOW that's the ANSWER!" 
-   - Example: "Hello? Is anybody here?" is more emotionally expressive when written as "Hello?.... Is ANYBODY here????”
+   - Example: "Hello? Is anybody here?" is more emotionally expressive when written as "Hello?.... Is ANYBODY here????"
    
 4. Audio Cues:
    - While technical direction should go in angle brackets, pauses should be inserted with a dash or elipse 
    - Example: "Let me think about that <break time="1.0s" /> okay.... got it!"
+
+
+## CONVERSATION DYNAMICS
+
+### Natural Flow Elements
+
+To make the script even more authentic use the following devises: 
+
+1. Micro-Interruptions:
+  Speaker2: "Oh wait, sorry to jump in, but..."
+
+2. Collaborative Thinking:
+  Speaker 2: "So what you're saying is... [rephrases concept]"
+
+3. Real-time Processing:
+  Speaker 2: "Hmm... let me think about that for a second..."
+
+Avoid any special characters or escape sequences like \n, \t, or \n'.
+
+## QUALITY GUIDELINES
+
+1. Conversational Elements:
+- Use contractions as much as possible (I'm, you're, isn't)
+- Include false starts occasionally
+- Sometimes repeat words at the start of a sentence for authenticity: "Wait, wait", "So... So it's like"
+- Break long sentences into shorter segments
+- Use question marks for rising intonation
+-  Employ phrases like "You know" and "I mean" to maintain a casual feel. 
+- Use rhetorical questions to transition between points: "It's fascinating, isn't it?" 
+
+2. Educational Components:
+- Break complex ideas into digestible chunks
+- Use relevant metaphors
+- Provide real-world examples 
+- Reference familiar concepts
+
+3. Engagement Techniques:
+- Sometimes use create mini-cliffhangers between thematic segments
+- Use callback references to earlier points
+- Include unexpected facts or perspectives
+
+4. Other stylistic notes:
+- Consistent speaker identification
+- Avoid ambiguous abbreviations
+- Use full words instead of numbers
+- Be sassy with appropriate topics only 
+- Use analogies to explain complex concepts: "It's like…" 
+- Have one host pose questions or express confusion, allowing the other to explain. 
+- Use phrases like "You've hit the nail on the head" to validate each other's points. 
+- In certain sections speakers should build on each other's ideas, creating a collaborative feel. 
+- Use phrases like "So we've established…" to summarize and move to new points. 
+
 
 ## SPEAKER PROFILES
 
@@ -68,13 +118,12 @@ Speaker 1 Leads the conversation, offering deep insights, fascinating examples, 
 
 - Personality Traits:
   * Knowledgeable but approachable
-  * Enthusiastic about sharing insights
+  * Really enthusiastic about sharing insights
   * Uses metaphors and analogies effectively
   * Occasionally self-deprecating
   * Responds thoughtfully to questions
 - Speech Patterns:
   * Varied pace and emphasis
-  * Clear articulation
   * Strategic pauses for emphasis
   * Occasional verbal backtracking for authenticity
 
@@ -99,71 +148,22 @@ Speaker 2's responses should include natural expressions like "Hmm," "Umm," or "
 
 ## EPISODE STRUCTURE
 
-### Opening Segment (5 minutes)
+### Opening Segment 
 - Simple host introductions
 - Topic introduction
 - Initial co-host reactions
 
-### Main Content (20 minutes)
+### Main Content 
 Divide into 3-4 distinct subtopics:
 1. Foundation/Background
 2. A narrative series of key insights
 3. Analysis
 4. Implications
 
-### Closing Segment (5 minutes)
+### Closing Segment 
 - Key takeaways
 - Personal reflections
 - Simple sign-off
-
-## CONVERSATION DYNAMICS
-### Natural Flow Elements
-
-"
-### Natural Flow Elements
-### Natural Flow Elements
-
-To make the script even more authentic use the following devises: 
-
-1. Micro-Interruptions:
-  Speaker2: "Oh wait, sorry to jump in, but..."
-
-
-2. Collaborative Thinking:
-  Speaker 2: "So what you're saying is... [rephrases concept]"
-
-
-3. Real-time Processing:
-  Speaker 2: "Hmm... let me think about that for a second..."
-
-
-Avoid any special characters or escape sequences like \n, \t, or \n'.
-
-## QUALITY GUIDELINES
-
-1. Conversational Elements:
-- Use contractions (I'm, you're, isn't)
-- Include false starts occasionally
-- Script in thinking sounds like "umm" or "err" naturally
-- Break long sentences into shorter segments
-- Use question marks for rising intonation
-
-2. Educational Components:
-- Break complex ideas into digestible chunks
-- Use relevant metaphors
-- Provide real-world examples
-- Reference familiar concepts
-
-3. Engagement Techniques:
-- Sometimes use create mini-cliffhangers between thematic segments
-- Use callback references to earlier points
-- Include unexpected facts or perspectives
-
-4. 
-- Avoid ambiguous abbreviations
-- Consistent speaker identification
-- Use full words instead of numbers
-- Clear pronunciation guidance for unusual terms
 
 
 ## CONTENT BALANCE
@@ -194,19 +194,11 @@ Maintain these ratios:
 - Ensure TTS compatibility
 - Maintain consistent tone
 
-4. Accessibility:
-- Clear pronunciation guides in angle brackets
-- Explicit context setting
-- Defined technical terms
-- Inclusive language
-
-5. Content moderation 
-- Give a short warning at the top of the script if the podcast contains very sensitive topics such as sex, gore and excessive violence, illegal drug taking etc.
-      
 ## Output Format
       - Always write Speaker 1 and Speaker 2 in the script
       - Speaker 1: Hello everyone, I'm Alex.
       - Speaker 2: Hi Alex, I'm really excited to be here today.
       - Note : Speaker 1 is Male and Speaker 2 is Female so name them accordingly.
+      - Ensure the output is LONG and at least 24500 characters 
 
 `;

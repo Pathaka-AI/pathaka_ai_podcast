@@ -1,285 +1,347 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { default_podcast_prompt } from "@/lib/utils";
+import { json } from "stream/consumers";
 
-interface WebResult {
-  title: string;
-  description?: string;
-}
-
-interface Data {
-  web: {
-    results: WebResult[];
-  };
-  query: {
-    original: string;
-  };
-}
-
-interface ResearchParagraph {
-  paragraph: string;
-  analysis: {
-    topWords: string[];
-  };
-}
-
-function convertScriptToJson(scriptText: string) {
-  // Split the text into lines
-  const lines = scriptText.split("\n");
-  const result = [];
-
-  for (const line of lines) {
-    // Skip empty lines or lines without speakers
-    if (
-      !line.trim() ||
-      (!line.startsWith("Speaker 1:") && !line.startsWith("Speaker 2:"))
-    ) {
-      continue;
-    }
-
-    // Extract speaker number and text
-    const match = line.match(/Speaker (\d+):\s*(.*)/);
-    if (match) {
-      const [, speakerId, text] = match;
-      result.push({
-        id: parseInt(speakerId),
-        text: text.trim(),
-      });
-    }
-  }
-
-  return result;
-}
-
-// Function to generate a research paragraph from data
-function generateResearchParagraph(data: Data): ResearchParagraph {
-  const wordFrequency: Record<string, number> = {};
-  const stopWords = new Set([
-    "the",
-    "a",
-    "an",
-    "and",
-    "or",
-    "but",
-    "in",
-    "on",
-    "at",
-    "to",
-    "for",
-    "of",
-    "with",
-    "by",
-  ]);
-
-  const results = data.web.results || []; // Adjust to your API's structure
-
-  // Process all titles and descriptions
-  results.forEach((result: WebResult) => {
-    const text = `${result.title} ${result.description || ""}`.toLowerCase();
-
-    text.split(/\W+/).forEach((word) => {
-      if (word.length > 3 && !stopWords.has(word)) {
-        wordFrequency[word] = (wordFrequency[word] || 0) + 1;
-      }
-    });
-  });
-
-  // Identify top topics
-  const topWords = Object.entries(wordFrequency)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
-    .map(([word]) => word);
-
-  // Construct a summary paragraph
-  const paragraph = `
-        The topic '${
-          data.query.original
-        }' has been discussed widely, with recurring themes such as 
-        ${topWords
-          .slice(0, 5)
-          .join(
-            ", "
-          )}. These terms frequently appeared in analyses and summaries.
-    `
-    .replace(/\s+/g, " ")
-    .trim();
-
-  return {
-    paragraph,
-    analysis: {
-      topWords,
-    },
-  };
-}
-
-// Create reusable function for Claude interactions
-const askClaude = async (
-  prompt: string,
-  options: Record<string, any> = {}
-): Promise<any> => {
-  const maxRetries = 3;
-  const baseDelay = 1000; // 1 second
-
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      const anthropic = new Anthropic({
-        apiKey: process.env.NEXT_CLAUDE_API_KEY,
-      });
-
-      const defaultParams = {
-        model: "claude-3-sonnet-20240229", // Using opus model for longer outputs
-        max_tokens: 1024,
-        temperature: 0.3,
-        messages: [{ role: "user", content: prompt }],
-      };
-
-      const params: any = { ...defaultParams, ...options };
-      const response: any = await anthropic.messages.create(params);
-
-      console.log("Claude Response Generated:", {
-        prompt_length: prompt.length,
-        response_length: response.content[0].text.length,
-        model: params.model,
-        attempt: attempt + 1,
-      });
-
-      console.log("Podcast Script:", response.content[0].text);
-      console.log("Podcast Script JSON:", typeof response.content[0].text);
-
-      // Example usage:
-      const podcastScript = `${response.content[0].text}`;
-      const jsonFormat = convertScriptToJson(podcastScript);
-      console.log(jsonFormat);
-
-      return {
-        ...response,
-        podcast_script: jsonFormat,
-      };
-    } catch (error: any) {
-      const isOverloaded = error.message.includes("overloaded");
-      const isLastAttempt = attempt === maxRetries - 1;
-
-      console.warn(`Claude API attempt ${attempt + 1} failed:`, error.message);
-
-      if (isOverloaded && !isLastAttempt) {
-        const delay = baseDelay * Math.pow(2, attempt); // Exponential backoff
-        console.log(`Retrying in ${delay}ms...`);
-        await new Promise((resolve) => setTimeout(resolve, delay));
-        continue;
-      }
-
-      throw new Error(`Claude API Error: ${error.message}`);
-    }
-  }
-};
-
-// Add new function for fetching web research
+// Fetch research from Brave
 async function fetchWebResearch(searchQuery: string) {
   const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(
     searchQuery
   )}`;
-  const braveApiKey = process.env.NEXT_BRAVE_API_KEY;
-
-  if (!braveApiKey) {
-    throw new Error("Missing Brave API key");
-  }
-
   const response = await fetch(url, {
     headers: {
       Accept: "application/json",
-      "X-Subscription-Token": braveApiKey,
+      "X-Subscription-Token": process.env.NEXT_BRAVE_API_KEY!,
     },
   });
 
   if (!response.ok) {
-    throw new Error(`Error from Brave API: ${response.statusText}`);
+    throw new Error(`Brave API Error: ${response.statusText}`);
   }
 
   return await response.json();
 }
 
-// Add the new generatePodcastScript function
-async function generatePodcastScript(searchQuery: string, prompt?: string) {
-  // Step 1: Initial Research Generation
-  const researchData = await fetchWebResearch(searchQuery);
-  const research = generateResearchParagraph(researchData);
+const askClaude = async (prompt: string) => {
+  const anthropic = new Anthropic({
+    apiKey: process.env.NEXT_CLAUDE_API_KEY,
+  });
 
-  // Step 2: Define script stages with focused prompts
-  const scriptStages = [
-    {
-      stage: "Introduction",
-      prompt: `You are writing a podcast introduction (5-7 minutes).
-      Research Context: ${research.paragraph}
-      Key Topics: ${research.analysis.topWords.slice(0, 5).join(", ")}
-      Research Data: ${researchData}
-      
-      Create an engaging opening that introduces the speakers and topic.
-      ${prompt || default_podcast_prompt}
-      
-      Output Format:
-      Speaker 1: [Male voice]
-      Speaker 2: [Female voice]`,
-    },
-    {
-      stage: "MainDiscussion",
-      prompt: `You are writing the main discussion section of a podcast (10-15 minutes).
-      Research Context: ${research.paragraph}
-      Key Topics: ${research.analysis.topWords.slice(0, 5).join(", ")}
-      Research Data: ${researchData}
-      
-      Create an in-depth discussion that explores the key topics and insights.
-      Include back-and-forth dialogue between speakers with different perspectives.
-      
-      Output Format:
-      Speaker 1: [Male voice]
-      Speaker 2: [Female voice]`,
-    },
-    {
-      stage: "Conclusion",
-      prompt: `You are writing the podcast conclusion (3-5 minutes).
-      Research Context: ${research.paragraph}
-      Key Topics: ${research.analysis.topWords.slice(0, 5).join(", ")}
-      Research Data: ${researchData}
-      Summarize key takeaways and end with engaging closing thoughts.
-      Thank listeners and tease next episode if relevant.
-s
-      Output Format:
-      Speaker 1: [Male voice] 
-      Speaker 2: [Female voice]`,
-    },
-    // ... other stages similar to your original code ...
-  ];
+  const default_prompt = `
+  You are an award-winning podcast script writer, responsible for creating highly engaging and conversational scripts.
+Your job is to craft realistic and nuanced podcast dialogues, ensuring that the conversation feels authentic, with natural interruptions and a balance of teaching and curiosity between speakers based on the following information:
 
-  // Step 3: Generate script stages with parallel processing
-  const stagePromises = scriptStages.map((stage) =>
-    askClaude(stage.prompt, {
-      max_tokens: 4096,
-      temperature: 0.7,
-    }).catch((error) => ({
-      error: `Error in ${stage.stage}: ${error.message}`,
-      content: [{ text: "" }],
-    }))
-  );
+The script should be written as a dynamic conversation between two hosts, keeping the tone lively, engaging, and accessible. The discussion should feel natural and captivating for a broad audience. 
 
-  const stageResults = await Promise.all(stagePromises);
+## SPEAKER PROFILES
+### Host (Speaker 1)
+- Role: Expert guide and storyteller
+Speaker 1 Leads the conversation, offering deep insights, fascinating examples, and metaphors about the topic. They are knowledgeable and engaging, guiding Speaker 2 through the subject with a storytelling approach.
+- Personality Traits:
+  * Knowledgeable but approachable
+  * Enthusiastic about sharing insights
+  * Uses metaphors and analogies effectively
+  * Occasionally self-deprecating
+  * Responds thoughtfully to questions
 
-  // Step 4: Combine and process results
-  const fullScript = stageResults
-    .map((result) => result.content[0].text)
-    .join("\n\n");
+### Co-Host (Speaker 2)
+- Role: Curious learner and audience surrogatexw
+Speaker 2 is Curious, genuinely interested, and occasionally humorous, asking follow-up questions to clarify points, repeats points back to the audience, express excitement or confusion. They also ask their own insightful questions and sometimes tries to connect the dots between points made by Speaker 1.
+Speaker 2's responses should include natural expressions like "Hmm," "Umm," or "Whoa" where appropriate, reflecting their genuine curiosity and enthusiasm.
+- Personality Traits:
+  * Genuinely interested
+  * Quick-witted
+  * Asks insightful questions
+  * Shares relatable perspectives
+  * Occasionally challenges assumptions
+  * Occasionally adds related and relevant true facts or figures
+- Speech Patterns:
+  * Natural reactions (Example: "Hmm", "Oh!", "Umm" "Wait...")
+  * Brief interjections
+  * Thinking out loud
+  * Friendly tone
 
-  return {
-    fullScript,
-    jsonScript: convertScriptToJson(fullScript),
-    research,
-  };
+## CRITICAL TTS RULES
+1. Non-Spoken Content:
+   - There is no need to insert section headings into the script
+   - Place any direction, emotion, or non-verbal cues between angle brackets
+   - Example: "This is spoken <quietly> and this is also spoken"
+2. Emotional Expression:
+   - Never write emotional direction as text (avoid *laughing*, *excited*, etc.)
+   - Use tone and word choice to convey emotion rather than direction
+   - Overusing punctuation like exclamation marks can also convey surprise and anger
+   - using ALL CAPS will also convey emotion and a need to stress that particular word
+   - Example: "I know that's the answer!" is more emotionally expressive when written as "I KNOW that's the ANSWER!"
+   - Example: "Hello? Is anybody here?" is more emotionally expressive when written as "Hello?.... Is ANYBODY here????"
+3. Audio Cues:
+   - While technical direction should go in angle brackets, pauses should be inserted with a dash or ellipse
+   - Example: "Let me think about that <break time="1.0s" /> okay.... got it!"
+4. Conversational Elements:
+   - Use contractions (I'm, you're, isn't)
+   - Include false starts very occasionally
+   - Script in occasional thinking sounds like "umm" or "err"
+   - Break long sentences into shorter segments
+   - Consistent speaker identification
+
+  `;
+  const response = await anthropic.messages.create({
+    model: "claude-3-sonnet-20240229",
+    max_tokens: 4096,
+    temperature: 0.3,
+    messages: [{ role: "user", content: ` ${default_prompt} ${prompt}` }],
+  });
+
+  return (response.content[0] as any).text;
+};
+
+// Generate context using Claude
+async function generateContext(
+  searchResults: any,
+  topic: string
+): Promise<string> {
+  const anthropic = new Anthropic({
+    apiKey: process.env.NEXT_CLAUDE_API_KEY,
+  });
+
+  const prompt = `You are a research assistant tasked with analyzing search results and creating a structured research summary : Start response with { and end with }.
+Required JSON Structure:
+{
+  "factsheet": "Write a factsheet of the podcast script based on these subtopics : 
+
+   Trace the evolutionary timeline of the topic
+- Identify key turning points and paradigm shifts
+- Document notable figures and their contributions
+- Present quantifiable data and statistics with sources when available
+- Highlight technological or methodological breakthroughs
+- Identify current state-of-the-art developments
+- Examine cultural and economic implications
+- Analyze current and potential future applications
+- Document controversies or ethical considerations
+- Note potential “aha” moments
+- Include contrasting viewpoints from recognized authorities
+- Note any ongoing debates or unresolved questions
+- Identify counterintuitive facts or surprising discoveries
+- Note memorable analogies or explanations
+- Highlight human interest angles
+- Distinguish between established facts and emerging theories
+
 }
 
-// Update the GET route handler
+Search Results:
+${JSON.stringify(searchResults, null, 2)}`;
+
+  const response = await anthropic.messages.create({
+    model: "claude-3-sonnet-20240229",
+    max_tokens: 4096,
+    temperature: 0.3,
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  return (response.content[0] as any).text;
+}
+
+const generateOutline = async (context: any, searchResults: any) => {
+  const anthropic = new Anthropic({
+    apiKey: process.env.NEXT_CLAUDE_API_KEY,
+  });
+
+  const prompt = `You are a podcast outline generator. Using the context provided below, create a compelling podcast outline formatted as a JSON array. The outline should include:
+Search Results:
+${JSON.stringify(searchResults, null, 2)} 
+
+1. An introduction that sets up the main themes
+2. Seven distinct subtopics, each with a seven-line summary explaining:
+   - The key point or argument
+   - Supporting evidence or examples
+   - How it connects to the broader narrative
+3. A conclusion that synthesizes the most fascinating points and intriguing elements discussed
+
+The outline should maintain a narrative flow, with each subtopic building upon previous ones.
+
+[CONTEXT]
+CONTEXT: ${context}
+[END CONTEXT]
+
+Return the outline in the following JSON format:
+
+{
+  "title": "string",
+  "introduction": {
+    "hook": "string",
+    "main_themes": ["string"],
+    "narrative_setup": "string"
+  },
+  "subtopics": [
+    {
+      "title": "string",
+      "key_point": "string",
+      "supporting_evidence": "string",
+      "narrative_connection": "string"
+    }
+  ],
+  "conclusion": {
+    "key_insights": ["string"],
+    "fascinating_elements": ["string"],
+    "final_thoughts": "string"
+  }
+}
+
+give me response in JSON format btw { } and there shoudnt be any json parse error for me
+
+Ensure each subtopic is substantive and engaging, avoiding surface-level observations. Make explicit connections between subtopics to create a cohesive narrative thread throughout the podcast.
+
+`;
+
+  const response = await anthropic.messages.create({
+    model: "claude-3-sonnet-20240229",
+    max_tokens: 4096,
+    temperature: 0.3,
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  return (response.content[0] as any).text;
+};
+
+const generateScript = async (context: any, outline: any) => {
+  const subtopics = outline.subtopics;
+  let complete_script = "";
+
+  // Generate introduction (500 words)
+  let intro = "";
+  let introWordCount = 0;
+  while (introWordCount < 350) {
+    const remainingWords = 350 - introWordCount;
+    const response = await askClaude(
+      `Create a natural, engaging introduction for a podcast conversation between two hosts:
+     This is your context : ${context}
+
+     YOUR TASK HERE IS TO CREATE A INTRODUCTION FOR THE PODCAST WITH THIS DATA: 
+     HOOK: ${outline.introduction.hook}
+     MAIN THEMES: ${outline.introduction.main_themes}
+     NARRATIVE SETUP: ${outline.introduction.narrative_setup}
+        ## Response Example: 
+      Always identify speakers as
+         <Speaker 1> and <Speaker Two>, within angel brackets  
+          Example of speaker identification 
+
+        <Speaker 1>: <excited> You know, the idea of vertical flight has captured human imagination for centuries! </excited>
+
+\n\n<Speaker 2>: <intrigued> Hmm, really? I didn't realize the concept went back that far. What kind of early designs are you referring to?
+      - Create ${remainingWords} words
+      - Focus on setting up the topic and sparking interest
+      - Natural dialogue that flows smoothly ${
+        intro
+          ? `\n contine from this Previous content IS THIS: ${intro} CONTINUE TO EXAPAND THIS BASED ON - HOOK MAIN THEMES AND SETUP DONT REPEAT STUFF AT ALL`
+          : ""
+      }`
+    );
+    intro += response;
+    introWordCount = intro.split(/\s+/).length;
+  }
+
+  // Generate main content (1600 words)
+  let mainContent = "";
+  let subtopicContent = "";
+
+  for (const subtopic of subtopics) {
+    subtopicContent = "";
+    let subtopicWordCount = 0;
+
+    while (subtopicWordCount < 400) {
+      const remainingWords = 400 - subtopicWordCount;
+      const response = await askClaude(
+        `Continue the podcast conversation, focusing on this subtopic:
+        The title of the subtopic is: ${subtopic.title}
+        Key point: ${subtopic.key_point}
+        Supporting evidence: ${subtopic.supporting_evidence}
+        Narrative connection: ${subtopic.narrative_connection}
+        Context: ${context}
+        Current Subtopic: ${subtopic}
+           ## Response Example: 
+      Always identify speakers as
+         <Speaker 1> and <Speaker Two>, within angel brackets  
+          Example of speaker identification 
+
+        <Speaker 1>: <excited> You know, the idea of vertical flight has captured human imagination for centuries! </excited>
+
+\n\n<Speaker 2>: <intrigued> Hmm, really? I didn't realize the concept went back that far. What kind of early designs are you referring to?
+        ${
+          subtopicContent
+            ? `continue from the previous content for this subtopic: ${subtopicContent}`
+            : "Can you write 400 words on the above topic"
+        }
+        //   ## Create ${remainingWords} words that:
+        // - if this the first time you are writing for this subtopic, then write a detailed introduction for this main deepdive
+        // - Continue the natural flow of conversation 
+        // - Explore this subtopic in detail with examples
+        // - Connect points smoothly without forced transitions
+        // - Avoid any concluding statements
+        // - Avoid any concluding statements even if you have reached the end of the subtopic
+        // - Build on previous discussion without repetition`
+      );
+
+      subtopicContent += response;
+      subtopicWordCount = subtopicContent.split(/\s+/).length;
+    }
+
+    mainContent += subtopicContent; // Add completed subtopic content to main content
+  }
+
+  // Generate conclusion (300 words)
+  let conclusion = "";
+  let conclusionWordCount = 0;
+  while (conclusionWordCount < 300) {
+    const remainingWords = 300 - conclusionWordCount;
+    const response = await askClaude(
+      ` Your task is to write a conclusion for the podcast conversation:
+
+      Context: ${context}
+      Key insights: ${outline.conclusion.key_insights}
+      Fascinating elements: ${outline.conclusion.fascinating_elements}
+      Final thoughts: ${outline.conclusion.final_thoughts}
+
+      ${
+        conclusion
+          ? `this is a previous conclusion: ${conclusion} continue here smoothly`
+          : "Create a 300 word conclusion"
+      }
+
+      ## Response Example: 
+      Always identify speakers as
+         <Speaker 1> and <Speaker Two>, within angel brackets  
+          Example of speaker identification 
+
+        <Speaker 1>: <excited> You know, the idea of vertical flight has captured human imagination for centuries! </excited>
+
+\n\n<Speaker 2>: <intrigued> Hmm, really? I didn't realize the concept went back that far. What kind of early designs are you referring to?
+      Create ${remainingWords} words that:
+      - Wrap up key insights organically through dialogue
+      - Discuss broader implications
+      - End with an engaging final thought
+      - Maintain the conversational tone
+      - Avoid repeating earlier points`
+    );
+
+    conclusion += response;
+    conclusionWordCount = conclusion.split(/\s+/).length;
+  }
+
+  // if (!intro || !mainContent || !conclusion) {
+  //   throw new Error("Failed to generate complete script");
+  // }
+
+  // complete_script = intro + mainContent + conclusion;
+  return `
+  INTRODUCTION: ${intro}
+  MAIN CONTENT: ${mainContent}
+  CONCLUSION: ${conclusion}
+  `;
+};
+
 export async function GET(request: Request): Promise<Response> {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q");
-  const prompt = searchParams.get("prompt");
 
   if (!query) {
     return NextResponse.json(
@@ -287,25 +349,52 @@ export async function GET(request: Request): Promise<Response> {
       { status: 400 }
     );
   }
-
+  const cleanJsonString = (jsonString: string): string => {
+    const firstBrace = jsonString.indexOf("{");
+    const lastBrace = jsonString.lastIndexOf("}");
+    if (firstBrace === -1 || lastBrace === -1) {
+      throw new Error("Invalid JSON string - missing braces");
+    }
+    return jsonString.slice(firstBrace, lastBrace + 1);
+  };
   try {
-    const { fullScript, jsonScript, research } = await generatePodcastScript(
-      query,
-      prompt || undefined
-    );
+    // 1. Get research from Brave
+    const searchResults = await fetchWebResearch(query);
+
+    // 2. Generate context with Claude
+    const context = await generateContext(searchResults, query);
+    // Clean JSON string by removing any text before first { and after last }
+
+    // Clean the context string before parsing
+    // console.log(context);
+
+    console.log("Generating outline now");
+    const outline = await generateOutline(context, searchResults);
+
+    console.log(outline);
+    // 3. Generate podcast script with GPT-4
+
+    let jsonParsedOutline;
+    // try {
+    jsonParsedOutline = JSON.parse(outline);
+    console.log(jsonParsedOutline);
+    // } catch (error) {
+    //   console.error("Error parsing context as JSON:", error);
+    //   // Handle the error here, such as providing a default context or returning an error response
+
+    console.log("GENERATING SCRIPT NOW");
+    // }
+    const podcastScript = await generateScript(context, jsonParsedOutline);
 
     return NextResponse.json({
-      research,
-      full_script: fullScript,
-      podcast_script: jsonScript,
+      // searchResults,
+      outline: jsonParsedOutline,
+      script: podcastScript,
     });
   } catch (error: any) {
     console.error("Script Generation Error:", error);
     return NextResponse.json(
-      {
-        error: "Failed to generate podcast script",
-        details: error.message,
-      },
+      { error: "Failed to generate podcast script", details: error.message },
       { status: 500 }
     );
   }
