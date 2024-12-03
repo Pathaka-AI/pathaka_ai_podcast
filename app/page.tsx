@@ -101,7 +101,7 @@ export default function ResearchPodcast() {
     setLoading(true);
     setError("");
     setPodcastAudio("");
-    
+
     try {
       const response = await fetch(`/api/elevenlabs`, {
         method: "POST",
@@ -116,24 +116,26 @@ export default function ResearchPodcast() {
       }
 
       const audioBlob = await response.blob();
-      const audioFile = new Blob([audioBlob], { type: 'audio/mpeg' });
+      const audioFile = new Blob([audioBlob], { type: "audio/mpeg" });
       const audioUrl = URL.createObjectURL(audioFile);
-      
+
       if (podcastAudio) {
         URL.revokeObjectURL(podcastAudio);
       }
-      
+
       setPodcastAudio(audioUrl);
-      
+
       setIsPlaying(false);
       setCurrentTime(0);
-      
+
       if (audioRef.current) {
         audioRef.current.load();
       }
     } catch (error) {
       console.error("Error:", error);
-      setError(error instanceof Error ? error.message : "Failed to generate audio");
+      setError(
+        error instanceof Error ? error.message : "Failed to generate audio"
+      );
     } finally {
       setLoading(false);
     }
@@ -176,7 +178,7 @@ export default function ResearchPodcast() {
           selectedTopic
         )}&prompt=${encodeURIComponent(prompt)}`
       );
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`API error (${response.status}): ${errorText}`);
@@ -184,18 +186,19 @@ export default function ResearchPodcast() {
 
       const data: ResearchResponse = await response.json();
 
-      if (!data || typeof data !== 'object') {
-        throw new Error('Invalid response format from API');
+      if (!data || typeof data !== "object") {
+        throw new Error("Invalid response format from API");
       }
 
       setPodcastScript(JSON.stringify(data, null, 2));
       setPodScript(data.parsedScript || []);
       setSearchResults(data.brave_search_results || []);
     } catch (err) {
-      console.error('Podcast generation error:', err);
-      setError(err instanceof Error ? 
-        `Failed to generate podcast: ${err.message}` : 
-        "An unexpected error occurred while generating the podcast"
+      console.error("Podcast generation error:", err);
+      setError(
+        err instanceof Error
+          ? `Failed to generate podcast: ${err.message}`
+          : "An unexpected error occurred while generating the podcast"
       );
     } finally {
       setLoading(false);
@@ -332,8 +335,7 @@ export default function ResearchPodcast() {
             <LoadingSkeleton />
           ) : (
             <>
-
-{podcastAudio && podcastAudio !== "" && (
+              {podcastAudio && podcastAudio !== "" && (
                 <Card className="p-6 bg-gray-900 border-gray-500 w-full max-w-2xl mt-10">
                   <div className="flex items-center gap-4">
                     <Button
@@ -361,14 +363,14 @@ export default function ResearchPodcast() {
                         <span>{formatTime(duration)}</span>
                       </div>
                     </div>
-                    <a 
-                      href={podcastAudio} 
+                    <a
+                      href={podcastAudio}
                       download="generated_audio.mp3"
                       onClick={(e) => {
                         e.preventDefault();
-                        const link = document.createElement('a');
+                        const link = document.createElement("a");
                         link.href = podcastAudio;
-                        link.download = 'generated_audio.mp3';
+                        link.download = "generated_audio.mp3";
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
@@ -377,13 +379,15 @@ export default function ResearchPodcast() {
                       <Download className="h-5 w-5 text-white" />
                     </a>
                   </div>
-                  <audio 
-                    ref={audioRef} 
+                  <audio
+                    ref={audioRef}
                     src={podcastAudio}
                     preload="auto"
                     onError={(e) => {
                       console.error("Audio playback error:", e);
-                      setError("Failed to play audio. Please try downloading instead.");
+                      setError(
+                        "Failed to play audio. Please try downloading instead."
+                      );
                     }}
                   />
                 </Card>
