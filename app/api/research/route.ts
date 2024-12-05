@@ -83,7 +83,10 @@ Speaker 2's responses should include natural expressions like "Hmm," "Umm," or "
    - Script in occasional thinking sounds like "umm" or "err"
    - Break long sentences into shorter segments
    - Consistent speaker identification
-
+   - Minimise the repetition of superlatives
+   - Always write numbers as whole words
+   - Exmpample: "153" should be written as "One hundred and fifty three"  
+   
   `;
   const response = await anthropic.messages.create({
     model: "claude-3-5-sonnet-20241022",
@@ -150,9 +153,9 @@ const generateOutline = async (context: any, searchResults: any) => {
 Search Results:
 ${JSON.stringify(searchResults, null, 2)} 
 
-1. An introduction that establishes up the main themes
+1. An introduction that establishes the main themes and a hook for the audience 
 2. Six distinct subtopics, each with a four-line summary explaining:
-   - The key point or argument
+   - The key points or arguments in this subtopic
    - Supporting evidence or examples
    - How it connects to the broader narrative
 3. A conclusion that synthesizes the most fascinating points and intriguing elements discussed
@@ -233,6 +236,7 @@ const generateScript = async (context: any, outline: any) => {
 
 \n\n<Speaker 2>: <intrigued> Hmm, really? I didn't realize the concept went back that far. What kind of early designs are you referring to?
       - Create ${remainingWords} words
+      - Welcome the audience with a brief greeting and announce the subject matter 
       - Focus on setting up the topic and sparking interest
       - Natural dialogue that flows smoothly ${
         intro
@@ -282,7 +286,7 @@ const generateScript = async (context: any, outline: any) => {
         // - Connect points smoothly without forced transitions
         // - Avoid any concluding statements
         // - Avoid any concluding statements even if you have reached the end of the subtopic
-        // - Build on previous discussion without repetition`
+        // - Build on previous discussion completely minimising repetitions`
       );
 
       subtopicContent += response;
