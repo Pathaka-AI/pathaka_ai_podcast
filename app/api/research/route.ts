@@ -112,7 +112,7 @@ Required JSON Structure:
 {
   "factsheet": "Write a factsheet of the podcast script based on these subtopics : 
 
-   Trace the evolutionary timeline of the topic
+- Trace the evolutionary timeline of the topic
 - Identify key turning points and paradigm shifts
 - Document notable figures and their contributions
 - Present quantifiable data and statistics with sources when available
@@ -154,9 +154,9 @@ Search Results:
 ${JSON.stringify(searchResults, null, 2)} 
 
 1. An introduction that establishes the main themes and a hook for the audience 
-2. Six distinct subtopics, each with a four-line summary explaining:
+2. Six distinct subtopics, each with a ten-line summary explaining:
    - The key points or arguments in this subtopic
-   - Supporting evidence or examples
+   - Supporting evidence, examples and controversies. This section should be substantial in length 
    - How it connects to the broader narrative
 3. A conclusion that synthesizes the most fascinating points and intriguing elements discussed
 
@@ -192,12 +192,12 @@ Return the outline in the following JSON format:
 
 ##FURTHER OUTLINE GUIDELINES 
 
-- Ensure each subtopic is substantive and engaging. 
-- Avoiding surface-level observations. 
+- Ensure each subtopic is engaging and interesting  
+- Avoiding surface-level observations 
 - Make explicit connections between subtopics to create a cohesive narrative thread throughout the podcast.
-- If appropriate, make one subtopic the focus of biographical, or backstory material.
-- If appropriate, make one subtopic the focus of controversies and debates.
-- If appropriate, include a 'breakthrough moment' where key revelations occur within at least one subtopic.
+- If applicable, make one subtopic the focus of biographical, or backstory material.
+- If applicable, make one subtopic the focus of controversies and debates.
+- When appropriate, include a 'breakthrough moment' where key revelations occur within at least one subtopic.
 
 `;
 
