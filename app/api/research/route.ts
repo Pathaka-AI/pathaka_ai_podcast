@@ -82,10 +82,10 @@ Speaker 2's responses should include natural expressions like "Hmm," "Umm," or "
    - Include false starts very occasionally
    - Script in occasional thinking sounds like "umm" or "err"
    - Break long sentences into shorter segments
-   - Consistent speaker identification
    - Minimise the repetition of superlatives
    - Always write numbers as whole words
    - Exmpample: "153" should be written as "One hundred and fifty three"  
+   - Consistent speaker identification
    
   `;
   const response = await anthropic.messages.create({
