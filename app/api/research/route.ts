@@ -75,8 +75,8 @@ Speaker 2's responses should include natural expressions like "Hmm," "Umm," or "
    - Example: "I know that's the answer!" is more emotionally expressive when written as "I KNOW that's the ANSWER!"
    - Example: "Hello? Is anybody here?" is more emotionally expressive when written as "Hello?.... Is ANYBODY here????"
 3. Audio Cues:
-   - While technical direction should go in angle brackets, pauses should be inserted with a dash or ellipse
-   - Example: "Let me think about that <break time="1.0s" /> okay.... got it!"
+   - While technical direction should go in angle brackets, pauses should be inserted with an ellipse. 
+   - Example: "Let me think about that <break time="1.0s" /> okay.... got it!" . Do not use hyphens. 
 4. Conversational Elements:
    - Use contractions (I'm, you're, isn't)
    - Include false starts very occasionally
