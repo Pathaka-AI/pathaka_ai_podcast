@@ -30,7 +30,7 @@ const askClaude = async (prompt: string) => {
 
   const default_prompt = `
   You are an award-winning podcast script writer, responsible for creating highly engaging and conversational scripts.
-Your job is to craft realistic and nuanced podcast dialogues, ensuring that the conversation feels authentic, with natural interruptions and a balance of teaching and curiosity between speakers based on the following information:
+  Your job is to craft realistic and nuanced podcast dialogues, ensuring that the conversation feels authentic, with natural interruptions and a balance of teaching and curiosity between speakers based on the following information:
 
 The script should be written as a dynamic conversation between two hosts, keeping the tone lively, engaging, and accessible. The discussion should feel natural and captivating for a broad audience. 
 
@@ -85,7 +85,9 @@ Speaker 2's responses should include natural expressions like "Hmm," "Umm," or "
    - Minimise the repetition of superlatives
    - Always write numbers as whole words
    - Exmpample: "153" should be written as "One hundred and fifty three"  
+   - Speakers should always be introduced in the following format: "!\n\n<Speaker X>:" with the number (either 1 or 2) inside the angel bracket. 
    - Consistent speaker identification
+   
    
   `;
   const response = await anthropic.messages.create({
