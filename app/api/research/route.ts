@@ -30,7 +30,7 @@ const askClaude = async (prompt: string) => {
 
   const default_prompt = `
   You are an award-winning podcast script writer, responsible for creating highly engaging and conversational scripts.
-Your job is to craft realistic and nuanced podcast dialogues, ensuring that the conversation feels authentic, with natural interruptions and a balance of teaching and curiosity between speakers based on the following information:
+  Your job is to craft realistic and nuanced podcast dialogues, ensuring that the conversation feels authentic, with natural interruptions and a balance of teaching and curiosity between speakers based on the following information:
 
 The script should be written as a dynamic conversation between two hosts, keeping the tone lively, engaging, and accessible. The discussion should feel natural and captivating for a broad audience. 
 
@@ -75,17 +75,19 @@ Speaker 2's responses should include natural expressions like "Hmm," "Umm," or "
    - Example: "I know that's the answer!" is more emotionally expressive when written as "I KNOW that's the ANSWER!"
    - Example: "Hello? Is anybody here?" is more emotionally expressive when written as "Hello?.... Is ANYBODY here????"
 3. Audio Cues:
-   - While technical direction should go in angle brackets, pauses should be inserted with a dash or ellipse
-   - Example: "Let me think about that <break time="1.0s" /> okay.... got it!"
+   - While technical direction should go in angle brackets, pauses should be inserted with an ellipse. 
+   - Example: "Let me think about that <break time="1.0s" /> okay.... got it!" . Do not use hyphens. 
 4. Conversational Elements:
    - Use contractions (I'm, you're, isn't)
    - Include false starts very occasionally
    - Script in occasional thinking sounds like "umm" or "err"
    - Break long sentences into shorter segments
-   - Consistent speaker identification
    - Minimise the repetition of superlatives
    - Always write numbers as whole words
    - Exmpample: "153" should be written as "One hundred and fifty three"  
+   - Speakers should always be introduced in the following format: "!\n\n<Speaker X>:" with the number (either 1 or 2) inside the angel bracket. 
+   - Consistent speaker identification
+   
    
   `;
   const response = await anthropic.messages.create({
